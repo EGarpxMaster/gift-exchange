@@ -1,0 +1,79 @@
+@import "tailwindcss";
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=Mountains+of+Christmas:wght@400;700&display=swap');
+
+@theme {
+  --color-christmas-red: #D42426;
+  --color-christmas-green: #165B33;
+  --color-christmas-gold: #F8B229;
+  --color-christmas-cream: #F0EAD6;
+  --color-christmas-dark: #0B0F19;
+
+  --font-family-sans: 'Inter', sans-serif;
+  --font-family-display: 'Mountains of Christmas', cursive;
+
+  --animate-wiggle: wiggle 1s ease-in-out infinite;
+  --animate-snow-fall: snowfall 10s linear infinite;
+  --animate-float: float 3s ease-in-out infinite;
+  --animate-bounce-slow: bounce 2s infinite;
+  --animate-pulse-slow: pulse 3s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+}
+
+/* Habilitar 3D transforms */
+.transform-style-3d {
+  transform-style: preserve-3d;
+}
+
+.perspective-1000 {
+  perspective: 1000px;
+}
+
+.perspective-2000 {
+  perspective: 2000px;
+}
+
+.backface-hidden {
+  backface-visibility: hidden;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+@keyframes wiggle {
+  0%, 100% { transform: rotate(-3deg); }
+  50% { transform: rotate(3deg); }
+}
+
+@keyframes snowfall {
+  0% { transform: translateY(-100vh); }
+  100% { transform: translateY(100vh); }
+}
+
+@keyframes float {
+  0%, 100% { transform: translateY(0px); }
+  50% { transform: translateY(-20px); }
+}
+
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+body {
+  font-family: var(--font-family-sans);
+  perspective: 1000px;
+}
+
+.font-display {
+  font-family: var(--font-family-display);
+}
+
+.animate-fade-in {
+  animation: fadeIn 0.5s ease-in;
+}
