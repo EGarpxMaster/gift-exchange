@@ -4,7 +4,6 @@ import { decrypt } from '../lib/encryption';
 import { Gift, LogOut } from 'lucide-react';
 import { isAfter } from 'date-fns';
 import confetti from 'canvas-confetti';
-import { ScrollEnvelope } from './ScrollEnvelope';
 
 interface DashboardProps {
     participantId: string;
@@ -134,13 +133,30 @@ export function Dashboard({ participantId, onLogout }: DashboardProps) {
                     </div>
 
                     {matchData ? (
-                        <div className="flex justify-center">
-                            <ScrollEnvelope
-                                recipientName={decryptedMatchName}
-                                giftOptions={matchData.gift_options}
-                                isNameRevealed={shouldRevealName}
-                                onRevealComplete={handleReveal}
-                            />
+                        <div className="bg-white p-8 rounded-lg shadow-xl border-t-4 border-christmas-red text-center">
+                            <h2 className="text-2xl font-bold text-christmas-dark mb-4">Tu Asignación</h2>
+                            {shouldRevealName && decryptedMatchName ? (
+                                <div className="mb-6">
+                                    <p className="text-lg text-gray-700 mb-2">¡Tu amigo secreto es!</p>
+                                    <p className="text-3xl font-bold text-christmas-red">{decryptedMatchName}</p>
+                                </div>
+                            ) : (
+                                <div className="mb-6">
+                                    <p className="text-lg text-gray-700">Tu amigo secreto desea...</p>
+                                    <p className="text-sm text-gray-500 mt-2 italic">El nombre se revelará el 24 de diciembre</p>
+                                </div>
+                            )}
+                            <div className="bg-red-50 p-6 rounded-lg">
+                                <h3 className="text-xl font-bold text-christmas-dark mb-4">🎁 Lista de Deseos:</h3>
+                                <ul className="space-y-2 text-left">
+                                    {matchData.gift_options.map((option, index) => (
+                                        <li key={index} className="flex items-start gap-2 text-gray-800">
+                                            <span className="text-christmas-red font-bold">{index + 1}.</span>
+                                            <span>{option}</span>
+                                        </li>
+                                    ))}
+                                </ul>
+                            </div>
                         </div>
                     ) : (
                         <div className="bg-white p-8 rounded-lg shadow-xl border-t-4 border-christmas-red text-center">
