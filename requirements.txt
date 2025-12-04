@@ -1,0 +1,14 @@
+# Dependencias para la aplicación de Intercambio de Regalos 2025
+# Streamlit App
+
+# Framework principal
+streamlit>=1.40.0
+
+# Base de datos
+supabase>=2.11.0
+
+# Encriptación
+cryptography>=44.0.0
+
+# Utilidades
+python-dotenv>=1.0.0

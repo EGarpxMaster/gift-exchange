@@ -1,20 +1,26 @@
-# 🎄 Intercambio de Regalos 2025 - El Sistema de Emmanuel
+# 🎄 Intercambio de Regalos 2025 - Streamlit App
 
-Aplicación web para gestionar el intercambio de regalos de fin de año con encriptación de nombres y sorteo automático.
+Aplicación web construida con **Streamlit** para gestionar el intercambio de regalos de fin de año con encriptación de nombres y sorteo automático.
 
 ## 🎁 Características Principales
 
-- **Animación de Sobre Interactivo:** Experiencia visual única con Anime.js para revelar el amigo secreto
-- **Encriptación de Nombres:** Los nombres de los participantes se encriptan para mantener el secreto
+- **Interfaz Intuitiva con Streamlit:** Fácil de usar y desplegar
+- **Encriptación de Nombres:** Los nombres de los participantes se encriptan con AES-256-GCM
 - **Sorteo Automático:** Algoritmo que garantiza que nadie se toque a sí mismo y no haya intercambios equivalentes
 - **Gestión por Categorías:** Élite ($1,000 MXN) y Diversión ($500 MXN)
 - **Panel de Administrador:** Control total del sorteo, encriptación y revelación de nombres
 - **Validación de Fechas:** Registro solo del 5 al 15 de diciembre, revelación el 24 de diciembre
-- **Interfaz Navideña:** Tema festivo con efecto de nieve y colores de temporada
+- **Base de Datos Supabase:** Conexión directa y segura a PostgreSQL
+- **Tema Navideño:** Diseño festivo con colores de temporada
 
 ## 🚀 Configuración Inicial
 
-### 1. Base de Datos (Supabase)
+### 1. Requisitos Previos
+
+- Python 3.8 o superior
+- Cuenta en [Supabase](https://supabase.com/)
+
+### 2. Base de Datos (Supabase)
 
 1. Crea un nuevo proyecto en [Supabase](https://supabase.com/)
 2. Ve al **SQL Editor** y ejecuta el script completo que se encuentra en `supabase/schema.sql`
@@ -25,7 +31,7 @@ Aplicación web para gestionar el intercambio de regalos de fin de año con encr
    - `Project URL`
    - `anon public` key
 
-### 2. Variables de Entorno
+### 3. Variables de Entorno
 
 Crea un archivo `.env` en la raíz del proyecto:
 
@@ -34,56 +40,89 @@ VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
 VITE_SUPABASE_ANON_KEY=tu_clave_anonima_aqui
 ```
 
-### 3. Instalación y Ejecución
+### 4. Instalación
 
 ```bash
+# Clonar el repositorio
+git clone https://github.com/tu-usuario/gift-exchange.git
+cd gift-exchange
+
 # Instalar dependencias
-npm install
-
-# Ejecutar en desarrollo
-npm run dev
-
-# Compilar para producción
-npm run build
+pip install -r requirements.txt
 ```
 
-## 🌐 Despliegue en GitHub Pages
+### 5. Ejecución Local
 
-### Configuración Automática
+```bash
+# Ejecutar la aplicación
+streamlit run app.py
+```
 
-Este proyecto está configurado para desplegarse automáticamente en GitHub Pages:
+La aplicación estará disponible en `http://localhost:8501`
 
-1. **Habilita GitHub Pages:**
-   - Ve a Settings > Pages en tu repositorio
-   - En "Source", selecciona "GitHub Actions"
+## 🌐 Despliegue en Streamlit Cloud
 
-2. **Configura las variables de entorno:**
-   - Ve a Settings > Secrets and variables > Actions
-   - Agrega los secrets:
-     - `VITE_SUPABASE_URL`: Tu URL de Supabase
-     - `VITE_SUPABASE_ANON_KEY`: Tu clave anónima de Supabase
+### Opción 1: Despliegue Automático (Recomendado)
 
-3. **Push a main:**
+1. **Sube tu código a GitHub:**
    ```bash
    git add .
-   git commit -m "Deploy to GitHub Pages"
+   git commit -m "Aplicación Streamlit lista"
    git push origin main
    ```
 
-4. El workflow de GitHub Actions se ejecutará automáticamente y desplegará tu aplicación
+2. **Ve a [Streamlit Cloud](https://streamlit.io/cloud):**
+   - Inicia sesión con tu cuenta de GitHub
+   - Click en "New app"
+   - Selecciona tu repositorio: `gift-exchange`
+   - Branch: `main`
+   - Main file path: `app.py`
 
-5. Tu aplicación estará disponible en: `https://<usuario>.github.io/gift-exchange/`
+3. **Configura las variables de entorno:**
+   - En "Advanced settings" > "Secrets"
+   - Agrega tu archivo `.env` completo:
+     ```toml
+     VITE_SUPABASE_URL = "https://tu-proyecto.supabase.co"
+     VITE_SUPABASE_ANON_KEY = "tu_clave_anonima_aqui"
+     ```
 
-### Despliegue Manual
+4. **Deploy:**
+   - Click en "Deploy!"
+   - Tu app estará disponible en: `https://tu-app.streamlit.app`
 
-Si prefieres desplegar manualmente:
+### Opción 2: Despliegue en Otras Plataformas
+
+#### Render.com
 
 ```bash
-# Instalar gh-pages
-npm install -D gh-pages
+# Crear archivo render.yaml en la raíz
+```
 
-# Construir y desplegar
-npm run deploy
+```yaml
+services:
+  - type: web
+    name: gift-exchange
+    env: python
+    buildCommand: pip install -r requirements.txt
+    startCommand: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0
+    envVars:
+      - key: VITE_SUPABASE_URL
+        value: https://tu-proyecto.supabase.co
+      - key: VITE_SUPABASE_ANON_KEY
+        value: tu_clave_anonima_aqui
+```
+
+#### Heroku
+
+```bash
+# Crear Procfile
+echo "web: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0" > Procfile
+
+# Desplegar
+heroku create gift-exchange-app
+heroku config:set VITE_SUPABASE_URL="https://tu-proyecto.supabase.co"
+heroku config:set VITE_SUPABASE_ANON_KEY="tu_clave_anonima_aqui"
+git push heroku main
 ```
 
 ## 📋 Flujo de Uso
@@ -97,106 +136,133 @@ npm run deploy
    - El sistema valida que no haya duplicados
 
 2. **Post-Sorteo (16-23 Diciembre):**
-   - **Ver el Sobre Animado:** Hacer clic en el sobre rojo para activar la animación
-   - La animación muestra:
-     - Apertura del sobre con rotación 3D
-     - Tarjeta que sale del sobre
-     - Zoom y revelación del contenido
-   - Ver las opciones de regalo de su amigo secreto
-   - **NO** se muestra el nombre (permanece encriptado)
+   - Acceder al dashboard con tu ID de participante
+   - Ver la lista de deseos de tu asignación
+   - El nombre permanece oculto hasta el 24 de diciembre
 
 3. **Revelación (24 Diciembre):**
-   - El sistema revela automáticamente el nombre del amigo secreto
-   - Se muestran todas las opciones de regalo
+   - Ver el nombre de tu amigo secreto
+   - ¡Preparar el regalo perfecto!
 
-### Para Administrador (Emmanuel)
+### Para Administradores
 
-Accede al panel administrativo agregando `?admin=true` a la URL.
+1. **Acceder al Panel de Admin:**
+   - Ir a la aplicación y seleccionar "Panel de Admin"
 
-1. **Ver Estadísticas:**
-   - Total de participantes
-   - Participantes por categoría
-   - Estado del sorteo
+2. **Ejecutar el Sorteo:**
+   - Click en "Realizar Sorteo" (después del 15 de diciembre)
+   - El algoritmo asigna automáticamente y valida las restricciones
 
-2. **Ejecutar Sorteo:**
-   - Solo se puede ejecutar una vez
-   - El algoritmo garantiza:
-     - Nadie se toca a sí mismo
-     - No hay intercambios equivalentes (si A→B, entonces B→A no es posible)
-     - Sorteo separado por categoría
-
-3. **Gestionar Encriptación:**
-   - **Cambiar Contraseña:** Permite actualizar la contraseña de encriptación
-   - **Ver Nombres:** Desencriptar nombres temporalmente (requiere contraseña)
-   - **IMPORTANTE:** Guarda la nueva contraseña, se necesita para desencriptar
+3. **Cambiar Contraseña de Encriptación (Opcional):**
+   - Cambiar la contraseña por defecto por una personalizada
+   - **IMPORTANTE:** Guardar la nueva contraseña en lugar seguro
 
 4. **Revelar Nombres:**
-   - Fuerza la revelación de nombres antes del 24 de diciembre (si es necesario)
+   - Click en "Revelar Ahora" cuando sea el momento
+   - Los participantes verán los nombres en su dashboard
 
-## 🔐 Seguridad y Encriptación
+## 🔒 Seguridad
 
-- Los nombres se encriptan usando **AES-GCM** (256 bits)
-- La contraseña por defecto es `GiftExchange2025!` (cámbiala en el panel de admin)
-- Solo quien tenga la contraseña puede desencriptar los nombres
-- La contraseña se almacena como hash SHA-256 en la base de datos
+- **Encriptación AES-256-GCM:** Nombres protegidos con estándar militar
+- **PBKDF2:** Derivación de claves con 100,000 iteraciones
+- **RLS en Supabase:** Row Level Security habilitado
+- **Variables de entorno:** Credenciales nunca en el código
 
-## 🧪 Modo de Desarrollo
-
-La aplicación incluye controles de simulación para pruebas:
-
-- **Botón "Simular 10 Dic":** Simula que estamos dentro del periodo de registro
-- **Botón "Simular 25 Dic":** Simula la fecha de revelación de nombres
-
-Estos botones solo están visibles en desarrollo para facilitar las pruebas.
-
-## 📁 Estructura del Proyecto
+## 🛠️ Estructura del Proyecto
 
 ```
-src/
-├── components/
-│   ├── AdminPanel.tsx      # Panel de administración
-│   ├── ChristmasLetter.tsx # Carta de bienvenida
-│   ├── Dashboard.tsx       # Vista del participante
-│   ├── EnvelopeReveal.tsx  # Animación del sobre (Anime.js)
-│   ├── Layout.tsx          # Layout principal con nieve
-│   ├── RegisterForm.tsx    # Formulario de registro
-│   └── SnowEffect.tsx      # Efecto de partículas de nieve
+gift-exchange/
+├── app.py                      # Aplicación principal de Streamlit
+├── requirements.txt            # Dependencias de Python
+├── .env                        # Variables de entorno (NO subir a Git)
+├── .streamlit/
+│   └── config.toml            # Configuración del tema
 ├── lib/
-│   ├── encryption.ts       # Utilidades de encriptación
-│   ├── sorteo.ts          # Algoritmo de sorteo
-│   └── supabase.ts        # Cliente y helpers de Supabase
-├── App.tsx                # Componente principal
-└── index.css              # Estilos globales
-
-supabase/
-└── schema.sql             # Esquema de la base de datos
+│   ├── encryption.py          # Módulo de encriptación AES-256-GCM
+│   ├── sorteo.py              # Algoritmo de sorteo
+│   └── supabase_client.py     # Cliente de Supabase
+└── supabase/
+    └── schema.sql             # Esquema de la base de datos
 ```
+
+## 🧪 Testing Local
+
+```bash
+# Ejecutar con fecha simulada
+# La aplicación incluye botones de desarrollo para simular fechas
+
+# Simular registro abierto (10 de diciembre)
+# Click en "Simular 10 de Diciembre" en el formulario
+
+# Simular revelación (25 de diciembre)
+# Click en "Simular 25 de Diciembre" en el dashboard
+```
+
+## 🐛 Solución de Problemas
+
+### Error de conexión a Supabase
+```
+Verificar que las variables de entorno estén correctamente configuradas
+Asegurarse de que el proyecto de Supabase esté activo
+```
+
+### Error de encriptación
+```
+La contraseña por defecto es: GiftExchange2025!
+Si se cambió, usar la nueva contraseña en el admin panel
+```
+
+### App no carga en Streamlit Cloud
+```
+Verificar que requirements.txt esté completo
+Revisar los logs en Streamlit Cloud
+Confirmar que los secrets estén configurados
+```
+
+## 📝 Notas Importantes
+
+- **Contraseña por Defecto:** `GiftExchange2025!` (cambiar en producción)
+- **Fechas Importantes:**
+  - Registro: 5-15 de Diciembre
+  - Sorteo: 16 de Diciembre
+  - Revelación: 24 de Diciembre
+- **Límite de Regalos:** Mínimo 5 opciones por participante
+- **Categorías:** Elite ($1,000) y Diversión ($500)
 
 ## 🎨 Personalización
 
-### Cambiar Fechas
+Para cambiar los colores del tema, edita `.streamlit/config.toml`:
 
-Edita las constantes en los componentes:
-- `RegisterForm.tsx`: Fechas de inicio y fin del registro
-- `Dashboard.tsx`: Fecha de revelación
+```toml
+[theme]
+primaryColor = "#dc2626"        # Color principal (rojo navideño)
+backgroundColor = "#ffffff"      # Fondo blanco
+secondaryBackgroundColor = "#f0f9ff"  # Fondo secundario
+textColor = "#1f2937"           # Color del texto
+```
 
-### Cambiar Contraseña de Encriptación
+## 🤝 Contribuciones
 
-1. Ve al panel de administrador (`?admin=true`)
-2. Haz clic en "Cambiar Contraseña de Encriptación"
-3. Ingresa la contraseña actual (por defecto: `GiftExchange2025!`)
-4. Ingresa y confirma la nueva contraseña
-5. **GUARDA LA NUEVA CONTRASEÑA** - la necesitarás para desencriptar
+Las contribuciones son bienvenidas. Por favor:
 
-## ⚠️ Notas Importantes
+1. Fork el proyecto
+2. Crea una rama para tu feature (`git checkout -b feature/AmazingFeature`)
+3. Commit tus cambios (`git commit -m 'Add some AmazingFeature'`)
+4. Push a la rama (`git push origin feature/AmazingFeature`)
+5. Abre un Pull Request
 
-- **No pierdas la contraseña de encriptación** - no hay forma de recuperar los nombres sin ella
-- El sorteo solo se puede ejecutar una vez (marcado como completado en la BD)
-- Mínimo 2 participantes por categoría para poder hacer el sorteo
-- Los participantes con solo 1 persona en su categoría no podrán ser asignados
+## 📄 Licencia
 
-## 🎅 Créditos
+Este proyecto es de código abierto y está disponible bajo la licencia MIT.
 
-Sistema desarrollado por Emmanuel para el Intercambio de Regalos de Fin de Año 2025.
+## 👨‍💻 Autor
 
-**¡Felices Fiestas y Próspero Año Nuevo 2026!** 🎉🎁
+Emmanuel - [@EGarpxMaster](https://github.com/EGarpxMaster)
+
+## 🎄 ¡Felices Fiestas!
+
+¿Preguntas o problemas? Abre un issue en GitHub.
+
+---
+
+**Hecho con ❤️ y Streamlit para hacer el intercambio de regalos más mágico** 🎁✨
