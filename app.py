@@ -37,7 +37,7 @@ DEFAULT_ENCRYPTION_PASSWORD = 'GiftExchange2025!'
 def add_bg_music():
     """Agregar música de fondo navideña"""
     try:
-        with open('/var/home/egarpx/Documentos/GitHub/gift-exchange/music/Whispering Snowfall.mp3', 'rb') as audio_file:
+        with open('music/Whispering Snowfall.mp3', 'rb') as audio_file:
             audio_bytes = audio_file.read()
             audio_base64 = base64.b64encode(audio_bytes).decode()
             audio_html = f"""
@@ -53,7 +53,7 @@ def add_bg_music():
 def add_bg_image():
     """Agregar imagen de fondo navideña"""
     try:
-        with open('/var/home/egarpx/Documentos/GitHub/gift-exchange/images/christmas-background.jpg', 'rb') as img_file:
+        with open('images/christmas-background.jpg', 'rb') as img_file:
             img_bytes = img_file.read()
             img_base64 = base64.b64encode(img_bytes).decode()
             st.markdown(f"""
