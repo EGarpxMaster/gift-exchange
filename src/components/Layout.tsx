@@ -9,7 +9,7 @@ export function Layout({ children }: { children: ReactNode }) {
             <SnowEffect />
             
             {/* Header */}
-            <header className="bg-christmas-red text-white py-6 shadow-lg sticky top-0 z-50 border-b-4 border-christmas-gold">
+            <header className="bg-christmas-red text-white py-6 shadow-lg sticky top-0 z-50 border-b-4 border-christmas-gold transition-transform duration-300" id="main-header">
                 <div className="container mx-auto px-4 flex items-center justify-between">
                     <div className="flex items-center gap-3">
                         <Gift className="w-8 h-8 text-christmas-gold animate-wiggle" />
