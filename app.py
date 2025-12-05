@@ -41,36 +41,33 @@ def add_bg_music():
             audio_bytes = audio_file.read()
             audio_base64 = base64.b64encode(audio_bytes).decode()
             
-            # Usar componente HTML persistente
-            import streamlit.components.v1 as components
-            
-            components.html(f"""
-            <div id="musicContainer">
-                <audio id="bgMusic" loop preload="auto">
-                    <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
-                </audio>
-                <button id="musicToggle" type="button">🎵</button>
-            </div>
+            audio_html = f"""
+            <audio id="bgMusic" loop preload="auto">
+                <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+            </audio>
+            <button id="musicToggle" type="button" style="
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 999999;
+                background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+                color: white;
+                border: 2px solid #fbbf24;
+                border-radius: 50%;
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+                transition: all 0.3s ease;
+                animation: glow 2s ease-in-out infinite;
+                -webkit-tap-highlight-color: transparent;
+                outline: none;
+                touch-action: manipulation;
+                user-select: none;
+                -webkit-user-select: none;
+            ">🎵</button>
             <style>
-                #musicToggle {{
-                    position: fixed;
-                    bottom: 20px;
-                    right: 20px;
-                    z-index: 999999;
-                    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-                    color: white;
-                    border: 2px solid #fbbf24;
-                    border-radius: 50%;
-                    width: 60px;
-                    height: 60px;
-                    font-size: 24px;
-                    cursor: pointer;
-                    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
-                    transition: all 0.3s ease;
-                    animation: glow 2s ease-in-out infinite;
-                    -webkit-tap-highlight-color: transparent;
-                    outline: none;
-                }}
                 @keyframes glow {{
                     0%, 100% {{ box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }}
                     50% {{ box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }}
@@ -81,62 +78,80 @@ def add_bg_music():
             </style>
             <script>
                 (function() {{
-                    var isPlaying = false;
                     var music = document.getElementById('bgMusic');
                     var toggle = document.getElementById('musicToggle');
+                    var isPlaying = false;
+                    var hasInteracted = false;
                     
-                    if (!music || !toggle) return;
+                    if (!music || !toggle) {{
+                        console.error('No se encontraron elementos de audio');
+                        return;
+                    }}
                     
-                    function playMusic() {{
-                        var playPromise = music.play();
-                        if (playPromise !== undefined) {{
-                            playPromise.then(function() {{
+                    function tryPlay() {{
+                        if (!hasInteracted) {{
+                            hasInteracted = true;
+                        }}
+                        
+                        music.play()
+                            .then(function() {{
                                 isPlaying = true;
                                 toggle.innerHTML = '🔊';
-                                console.log('Música reproduciendo');
-                            }}).catch(function(err) {{
-                                console.log('Error play:', err);
+                                toggle.style.animation = 'glow 2s ease-in-out infinite';
+                            }})
+                            .catch(function(error) {{
+                                console.warn('No se pudo reproducir:', error);
                                 isPlaying = false;
                                 toggle.innerHTML = '🎵';
                             }});
-                        }}
                     }}
                     
-                    function pauseMusic() {{
+                    function pause() {{
                         music.pause();
                         isPlaying = false;
                         toggle.innerHTML = '🎵';
-                        console.log('Música pausada');
                     }}
                     
-                    function handleClick(e) {{
-                        if (e) {{
-                            e.preventDefault();
-                            e.stopPropagation();
-                        }}
-                        console.log('Click en botón, isPlaying:', isPlaying);
-                        if (isPlaying) {{
-                            pauseMusic();
-                        }} else {{
-                            playMusic();
-                        }}
-                    }}
-                    
-                    // Eventos
-                    toggle.onclick = handleClick;
-                    toggle.ontouchend = function(e) {{
+                    function handleInteraction(e) {{
                         e.preventDefault();
-                        handleClick(e);
-                    }};
+                        e.stopPropagation();
+                        
+                        if (isPlaying) {{
+                            pause();
+                        }} else {{
+                            tryPlay();
+                        }}
+                        
+                        return false;
+                    }}
                     
-                    // Autoplay inicial
+                    // Múltiples eventos para máxima compatibilidad
+                    toggle.addEventListener('touchstart', handleInteraction, {{ passive: false }});
+                    toggle.addEventListener('touchend', handleInteraction, {{ passive: false }});
+                    toggle.addEventListener('click', handleInteraction, {{ passive: false }});
+                    
+                    // Intentar autoplay en escritorio después de un delay
                     setTimeout(function() {{
-                        console.log('Intentando autoplay...');
-                        playMusic();
-                    }}, 1000);
+                        if (!hasInteracted) {{
+                            tryPlay();
+                        }}
+                    }}, 1500);
+                    
+                    // Reintentar en eventos de usuario en el documento (solo desktop)
+                    var autoplayAttempts = 0;
+                    function tryAutoplay() {{
+                        if (!hasInteracted && autoplayAttempts < 1) {{
+                            autoplayAttempts++;
+                            tryPlay();
+                        }}
+                    }}
+                    
+                    document.addEventListener('click', tryAutoplay, {{ once: true }});
+                    document.addEventListener('keydown', tryAutoplay, {{ once: true }});
                 }})();
             </script>
-            """, height=0)
+            """
+            st.markdown(audio_html, unsafe_allow_html=True)
     except Exception as e:
         print(f"Error loading music: {e}")
         pass  # Si no existe el archivo, continuar sin música
