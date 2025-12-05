@@ -66,7 +66,7 @@ def check_name_exists(encrypted_name: str) -> bool:
     return len(response.data) > 0
 
 
-def create_participant(encrypted_name: str, category: str, gift_options: List[str]) -> Dict[str, Any]:
+def create_participant(encrypted_name: str, category: str, gift_options: List[str], password_hash: str, gift_images: Optional[List[str]] = None) -> Dict[str, Any]:
     """
     Crea un nuevo participante
     
@@ -74,6 +74,8 @@ def create_participant(encrypted_name: str, category: str, gift_options: List[st
         encrypted_name: Nombre encriptado del participante
         category: Categoría ('elite' o 'diversion')
         gift_options: Lista de opciones de regalo
+        password_hash: Hash de la contraseña del participante
+        gift_images: Lista de URLs de imágenes de regalos (opcional)
         
     Returns:
         Datos del participante creado
@@ -84,7 +86,9 @@ def create_participant(encrypted_name: str, category: str, gift_options: List[st
     data = {
         'encrypted_name': encrypted_name,
         'category': category,
-        'gift_options': gift_options
+        'gift_options': gift_options,
+        'password_hash': password_hash,
+        'gift_images': gift_images or []
     }
     
     response = supabase.table('participants').insert(data).execute()
@@ -194,3 +198,97 @@ def delete_participant(participant_id: str) -> None:
         participant_id: UUID del participante a eliminar
     """
     supabase.table('participants').delete().eq('id', participant_id).execute()
+
+
+# ============== STORAGE FUNCTIONS ==============
+
+def upload_gift_image(participant_id: str, option_index: int, image_bytes: bytes, file_name: str) -> str:
+    """
+    Sube una imagen de regalo al bucket de Supabase Storage
+    
+    Args:
+        participant_id: UUID del participante
+        option_index: Índice de la opción de regalo (0-6)
+        image_bytes: Bytes de la imagen
+        file_name: Nombre original del archivo
+        
+    Returns:
+        URL pública de la imagen subida
+    """
+    # Crear nombre único para el archivo
+    file_extension = file_name.split('.')[-1] if '.' in file_name else 'jpg'
+    storage_path = f"{participant_id}/option_{option_index}.{file_extension}"
+    
+    # Subir imagen al bucket 'gift-images'
+    supabase.storage.from_('gift-images').upload(
+        storage_path,
+        image_bytes,
+        file_options={"content-type": f"image/{file_extension}"}
+    )
+    
+    # Obtener URL pública
+    public_url = supabase.storage.from_('gift-images').get_public_url(storage_path)
+    
+    return public_url
+
+
+def get_gift_image_url(participant_id: str, option_index: int) -> Optional[str]:
+    """
+    Obtiene la URL de una imagen de regalo si existe
+    
+    Args:
+        participant_id: UUID del participante
+        option_index: Índice de la opción de regalo
+        
+    Returns:
+        URL de la imagen o None si no existe
+    """
+    try:
+        # Listar archivos en el directorio del participante
+        files = supabase.storage.from_('gift-images').list(participant_id)
+        
+        # Buscar el archivo correspondiente
+        for file in files:
+            if file['name'].startswith(f'option_{option_index}.'):
+                storage_path = f"{participant_id}/{file['name']}"
+                return supabase.storage.from_('gift-images').get_public_url(storage_path)
+        
+        return None
+    except:
+        return None
+
+
+def delete_gift_image(participant_id: str, option_index: int) -> None:
+    """
+    Elimina una imagen de regalo
+    
+    Args:
+        participant_id: UUID del participante
+        option_index: Índice de la opción de regalo
+    """
+    try:
+        files = supabase.storage.from_('gift-images').list(participant_id)
+        for file in files:
+            if file['name'].startswith(f'option_{option_index}.'):
+                storage_path = f"{participant_id}/{file['name']}"
+                supabase.storage.from_('gift-images').remove([storage_path])
+                break
+    except:
+        pass
+
+
+# ============== PASSWORD FUNCTIONS ==============
+
+def get_participant_by_name_and_password(encrypted_name: str, password_hash: str) -> Optional[Dict[str, Any]]:
+    """
+    Obtiene un participante por nombre encriptado y contraseña
+    
+    Args:
+        encrypted_name: Nombre encriptado del participante
+        password_hash: Hash de la contraseña
+        
+    Returns:
+        Datos del participante o None si no existe o la contraseña es incorrecta
+    """
+    response = supabase.table('participants').select('*').eq('encrypted_name', encrypted_name).eq('password_hash', password_hash).execute()
+    return response.data[0] if response.data else None

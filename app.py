@@ -450,6 +450,10 @@ def show_register():
             name = st.text_input("Nombre Completo", placeholder="Ej. Juan Pérez", key="name_input")
             st.caption("⚠️ Tu nombre será encriptado para mantener el secreto hasta el 24 de diciembre")
             
+            password = st.text_input("Contraseña Secreta", type="password", placeholder="Mínimo 6 caracteres", key="password_input")
+            password_confirm = st.text_input("Confirmar Contraseña", type="password", placeholder="Repite tu contraseña", key="password_confirm_input")
+            st.caption("🔐 Usarás esta contraseña para acceder a tu dashboard y ver tu asignación")
+            
             st.markdown("### 💰 Categoría")
             category = st.radio(
                 "Selecciona tu categoría:",
@@ -460,6 +464,7 @@ def show_register():
             
             st.markdown("### 🎁 Lista de Deseos (Mínimo 5 opciones)")
             gift_options = []
+            uploaded_images = []
             for i in range(7):
                 col_gift, col_link = st.columns([2, 1])
                 with col_gift:
@@ -476,6 +481,15 @@ def show_register():
                         placeholder="Ej. https://...",
                         label_visibility="visible" if i < 5 else "collapsed"
                     )
+                
+                # Agregar opción de subir imagen (siempre visible)
+                uploaded_file = st.file_uploader(
+                    f"📷 Imagen de referencia (opcional) - Opción {i+1}",
+                    type=['png', 'jpg', 'jpeg', 'webp'],
+                    key=f"img_{i}",
+                    label_visibility="visible" if i < 5 else "collapsed"
+                )
+                uploaded_images.append(uploaded_file)
                 
                 if gift.strip():
                     gift_entry = gift.strip()
@@ -498,6 +512,10 @@ def show_register():
                 # Validaciones
                 if not name.strip():
                     st.error("Por favor ingresa tu nombre completo.")
+                elif not password or len(password) < 6:
+                    st.error("La contraseña debe tener al menos 6 caracteres.")
+                elif password != password_confirm:
+                    st.error("Las contraseñas no coinciden.")
                 elif len(gift_options) < 5:
                     st.error(f"Por favor agrega al menos 5 opciones de regalo. Tienes {len(gift_options)}.")
                 else:
@@ -506,13 +524,34 @@ def show_register():
                             # Encriptar nombre
                             encrypted_name = encrypt(name.strip(), DEFAULT_ENCRYPTION_PASSWORD)
                             
+                            # Hash de contraseña
+                            password_hash = hash_password(password)
+                            
                             # Verificar si ya existe
                             if check_name_exists(encrypted_name):
                                 st.error("Ya existe un registro con este nombre.")
                             else:
-                                # Crear participante
-                                participant = create_participant(encrypted_name, category, gift_options)
-                                st.session_state.participant_id = participant['id']
+                                # Crear participante primero
+                                participant = create_participant(encrypted_name, category, gift_options, password_hash)
+                                participant_id = participant['id']
+                                
+                                # Subir imágenes si existen
+                                gift_image_urls = []
+                                for idx, uploaded_file in enumerate(uploaded_images):
+                                    if uploaded_file is not None and idx < len(gift_options):
+                                        try:
+                                            from lib.supabase_client import upload_gift_image
+                                            image_bytes = uploaded_file.read()
+                                            image_url = upload_gift_image(participant_id, idx, image_bytes, uploaded_file.name)
+                                            gift_image_urls.append(image_url)
+                                        except Exception as img_error:
+                                            st.warning(f"No se pudo subir la imagen {idx+1}: {str(img_error)}")
+                                            gift_image_urls.append(None)
+                                    else:
+                                        gift_image_urls.append(None)
+                                
+                                st.session_state.participant_id = participant_id
+                                st.session_state.participant_name = encrypted_name
                                 st.success("✅ ¡Registro exitoso!")
                                 st.balloons()
                                 st.session_state.view = 'dashboard'
@@ -532,17 +571,39 @@ def show_dashboard():
                         border-top: 4px solid #16a34a; border-bottom: 4px solid #dc2626;">
                 <h2 style="color: #dc2626;">📊 Acceso al Dashboard</h2>
                 <p style="color: #4b5563; margin: 1.5rem 0;">
-                    Por favor ingresa tu ID de participante para continuar
+                    Ingresa tu nombre y contraseña para ver tu asignación
                 </p>
             </div>
             """, unsafe_allow_html=True)
             st.write("")
-            participant_id = st.text_input("ID de Participante", key="pid_input")
+            
+            login_name = st.text_input("Nombre Completo", placeholder="Ej. Juan Pérez", key="login_name_input")
+            login_password = st.text_input("Contraseña", type="password", placeholder="Tu contraseña secreta", key="login_password_input")
+            
             col_a, col_b = st.columns(2)
             with col_a:
                 if st.button("🔓 Entrar", use_container_width=True, key="enter_dash"):
-                    st.session_state.participant_id = participant_id
-                    st.rerun()
+                    if not login_name.strip() or not login_password:
+                        st.error("Por favor completa todos los campos.")
+                    else:
+                        try:
+                            # Encriptar nombre
+                            encrypted_name = encrypt(login_name.strip(), DEFAULT_ENCRYPTION_PASSWORD)
+                            # Hash de contraseña
+                            password_hash = hash_password(login_password)
+                            
+                            # Buscar participante
+                            from lib.supabase_client import get_participant_by_name_and_password
+                            participant = get_participant_by_name_and_password(encrypted_name, password_hash)
+                            
+                            if participant:
+                                st.session_state.participant_id = participant['id']
+                                st.session_state.participant_name = encrypted_name
+                                st.rerun()
+                            else:
+                                st.error("❌ Nombre o contraseña incorrectos.")
+                        except Exception as e:
+                            st.error(f"Error al iniciar sesión: {str(e)}")
             with col_b:
                 if st.button("⬅️ Volver al inicio", use_container_width=True, type="secondary", key="back_dash"):
                     st.session_state.view = 'home'
@@ -600,11 +661,9 @@ def show_dashboard():
             except:
                 decrypted_match = None
             
-            # Construir lista de deseos
+            # Construir lista de deseos con imágenes
             gift_options = match_data.get('gift_options', [])
-            gift_list_html = ""
-            for idx, gift in enumerate(gift_options, 1):
-                gift_list_html += f'<li style="margin: 0.5rem 0; color: #4b5563; font-size: 1rem;"><strong>{idx}.</strong> {gift}</li>'
+            gift_images = match_data.get('gift_images', [])
             
             # Renderizar el contenido completo en HTML
             if should_reveal and decrypted_match:
@@ -618,11 +677,18 @@ def show_dashboard():
                         <h1 style="color: #dc2626; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); font-size: 2.5rem;">{decrypted_match}</h1>
                     </div>
                     <h3 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Lista de Deseos:</h3>
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        {gift_list_html}
-                    </ul>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                # Mostrar cada regalo con su imagen si existe
+                for idx, gift in enumerate(gift_options):
+                    col1, col2 = st.columns([2, 1])
+                    with col1:
+                        st.markdown(f"**{idx+1}.** {gift}")
+                    with col2:
+                        if gift_images and idx < len(gift_images) and gift_images[idx]:
+                            st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
+                
                 st.balloons()
             elif should_reveal and not decrypted_match:
                 st.markdown(f"""
@@ -634,13 +700,18 @@ def show_dashboard():
                         <p style="color: #dc2626; margin: 0;">❌ Error al desencriptar el nombre</p>
                     </div>
                     <h3 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Lista de Deseos:</h3>
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        {gift_list_html}
-                    </ul>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                for idx, gift in enumerate(gift_options):
+                    col1, col2 = st.columns([2, 1])
+                    with col1:
+                        st.markdown(f"**{idx+1}.** {gift}")
+                    with col2:
+                        if gift_images and idx < len(gift_images) and gift_images[idx]:
+                            st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
             else:
-                st.markdown(f"""
+                st.markdown("""
                 <div style="background: rgba(255, 255, 255, 0.95); padding: 2.5rem; border-radius: 16px; 
                             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
                             border-top: 4px solid #dc2626; border-bottom: 4px solid #16a34a;">
@@ -649,11 +720,16 @@ def show_dashboard():
                         <p style="color: #1e40af; margin: 0;">🎄 El nombre se revelará el 24 de diciembre a medianoche</p>
                     </div>
                     <h3 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Lista de Deseos:</h3>
-                    <ul style="list-style: none; padding: 0; margin: 0;">
-                        {gift_list_html}
-                    </ul>
                 </div>
                 """, unsafe_allow_html=True)
+                
+                for idx, gift in enumerate(gift_options):
+                    col1, col2 = st.columns([2, 1])
+                    with col1:
+                        st.markdown(f"**{idx+1}.** {gift}")
+                    with col2:
+                        if gift_images and idx < len(gift_images) and gift_images[idx]:
+                            st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
         else:
             st.markdown("""
             <div style="background: rgba(255, 255, 255, 0.95); padding: 2.5rem; border-radius: 16px; 
