@@ -40,141 +40,176 @@ def add_bg_music():
     music_url = "https://raw.githubusercontent.com/EGarpxMaster/gift-exchange/main/music/Whispering%20Snowfall.mp3"
     
     audio_html = f"""
-    <audio id="bgMusic" loop preload="metadata" crossorigin="anonymous">
-        <source src="{music_url}" type="audio/mpeg">
-    </audio>
-    <button id="musicToggle" type="button" style="
-        position: fixed;
-        bottom: 20px;
-        right: 20px;
-        z-index: 999999;
-        background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-        color: white;
-        border: 2px solid #fbbf24;
-        border-radius: 50%;
-        width: 60px;
-        height: 60px;
-        font-size: 24px;
-        cursor: pointer;
-        box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
-        transition: all 0.3s ease;
-        animation: glow 2s ease-in-out infinite;
-        -webkit-tap-highlight-color: transparent;
-        outline: none;
-        touch-action: manipulation;
-        user-select: none;
-        -webkit-user-select: none;
-    ">🎵</button>
-    <style>
-        @keyframes glow {{
-            0%, 100% {{ box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }}
-            50% {{ box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }}
-        }}
-        #musicToggle:active {{
-            transform: scale(0.9);
-        }}
-    </style>
-    <script>
-        (function() {{
+    <!DOCTYPE html>
+    <html>
+    <head>
+        <style>
+            body {{
+                margin: 0;
+                padding: 0;
+            }}
+            @keyframes glow {{
+                0%, 100% {{ box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }}
+                50% {{ box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }}
+            }}
+            #musicToggle {{
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 999999;
+                background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+                color: white;
+                border: 2px solid #fbbf24;
+                border-radius: 50%;
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+                transition: all 0.3s ease;
+                animation: glow 2s ease-in-out infinite;
+                -webkit-tap-highlight-color: transparent;
+                outline: none;
+                touch-action: manipulation;
+                user-select: none;
+                -webkit-user-select: none;
+            }}
+            #musicToggle:active {{
+                transform: scale(0.9);
+            }}
+        </style>
+    </head>
+    <body>
+        <audio id="bgMusic" loop preload="auto">
+            <source src="{music_url}" type="audio/mpeg">
+        </audio>
+        <button id="musicToggle" type="button">🎵</button>
+        
+        <script>
+            console.log('🎼 Script iniciado');
+            
             var music = document.getElementById('bgMusic');
             var toggle = document.getElementById('musicToggle');
             var isPlaying = false;
             
+            console.log('🎵 Music element:', music);
+            console.log('🔘 Toggle element:', toggle);
+            
             if (!music || !toggle) {{
-                console.error('Elementos no encontrados');
-                return;
-            }}
-            
-            // Log para debug
-            music.addEventListener('loadeddata', function() {{
-                console.log('✓ Audio cargado, duración:', music.duration);
-            }});
-            
-            music.addEventListener('error', function(e) {{
-                console.error('✗ Error al cargar audio:', e);
-                toggle.innerHTML = '❌';
-            }});
-            
-            music.addEventListener('playing', function() {{
-                console.log('♪ Audio reproduciendo');
-            }});
-            
-            music.addEventListener('pause', function() {{
-                console.log('⏸ Audio pausado');
-            }});
-            
-            function tryPlay() {{
-                console.log('▶ Intentando reproducir...');
-                music.volume = 0.5;
+                console.error('❌ Elementos no encontrados');
+            }} else {{
+                console.log('✓ Elementos encontrados correctamente');
                 
-                var playPromise = music.play();
+                // Eventos de audio
+                music.addEventListener('loadedmetadata', function() {{
+                    console.log('📊 Metadata cargada, duración:', music.duration, 'segundos');
+                }});
                 
-                if (playPromise !== undefined) {{
-                    playPromise
-                        .then(function() {{
-                            isPlaying = true;
-                            toggle.innerHTML = '🔊';
-                            console.log('✓ Reproduciendo exitosamente');
-                        }})
-                        .catch(function(error) {{
-                            console.error('✗ Error al reproducir:', error.name, error.message);
-                            toggle.innerHTML = '⚠️';
-                            isPlaying = false;
-                            
-                            setTimeout(function() {{
+                music.addEventListener('loadeddata', function() {{
+                    console.log('✓ Audio data cargado');
+                }});
+                
+                music.addEventListener('canplay', function() {{
+                    console.log('✓ Audio listo para reproducir');
+                }});
+                
+                music.addEventListener('error', function(e) {{
+                    console.error('❌ Error de audio:', music.error);
+                    if (music.error) {{
+                        console.error('Código de error:', music.error.code);
+                        console.error('Mensaje:', music.error.message);
+                    }}
+                    toggle.innerHTML = '⚠️';
+                }});
+                
+                music.addEventListener('playing', function() {{
+                    console.log('▶️ Audio reproduciendo');
+                    toggle.innerHTML = '🔊';
+                }});
+                
+                music.addEventListener('pause', function() {{
+                    console.log('⏸️ Audio pausado');
+                    toggle.innerHTML = '🎵';
+                }});
+                
+                function tryPlay() {{
+                    console.log('🎬 Intentando reproducir...');
+                    music.volume = 0.5;
+                    
+                    var playPromise = music.play();
+                    
+                    if (playPromise !== undefined) {{
+                        playPromise
+                            .then(function() {{
+                                isPlaying = true;
+                                toggle.innerHTML = '🔊';
+                                console.log('✅ Reproducción exitosa');
+                            }})
+                            .catch(function(error) {{
+                                console.error('❌ Error al reproducir:', error.name, '-', error.message);
                                 toggle.innerHTML = '🎵';
-                            }}, 2000);
-                        }});
+                                isPlaying = false;
+                            }});
+                    }}
                 }}
-            }}
-            
-            function pauseMusic() {{
-                music.pause();
-                isPlaying = false;
-                toggle.innerHTML = '🎵';
-            }}
-            
-            function handleClick(e) {{
-                if (e) {{
+                
+                function pauseMusic() {{
+                    console.log('⏹️ Pausando música');
+                    music.pause();
+                    isPlaying = false;
+                    toggle.innerHTML = '🎵';
+                }}
+                
+                function handleClick(e) {{
+                    if (e) {{
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }}
+                    
+                    console.log('👆 Click - Estado actual:', isPlaying ? 'reproduciendo' : 'pausado');
+                    
+                    if (isPlaying) {{
+                        pauseMusic();
+                    }} else {{
+                        tryPlay();
+                    }}
+                    
+                    return false;
+                }}
+                
+                // Eventos de click
+                toggle.addEventListener('touchstart', function(e) {{
+                    console.log('📱 Touchstart detectado');
+                }}, {{ passive: true }});
+                
+                toggle.addEventListener('touchend', function(e) {{
+                    console.log('📱 Touchend detectado');
                     e.preventDefault();
                     e.stopPropagation();
-                }}
+                    handleClick(null);
+                }}, {{ passive: false }});
                 
-                console.log('👆 Click detectado, isPlaying:', isPlaying);
+                toggle.addEventListener('click', function(e) {{
+                    console.log('🖱️ Click detectado');
+                    handleClick(e);
+                }});
                 
-                if (isPlaying) {{
-                    pauseMusic();
+                // Intento de autoplay en desktop
+                if (!/Mobi|Android/i.test(navigator.userAgent)) {{
+                    console.log('💻 Desktop detectado - autoplay en 2 segundos');
+                    setTimeout(function() {{
+                        tryPlay();
+                    }}, 2000);
                 }} else {{
-                    tryPlay();
+                    console.log('📱 Móvil detectado - esperando interacción del usuario');
                 }}
-                
-                return false;
             }}
-            
-            // Eventos touch y click
-            toggle.addEventListener('touchend', function(e) {{
-                e.preventDefault();
-                e.stopPropagation();
-                handleClick(null);
-            }}, {{ passive: false }});
-            
-            toggle.addEventListener('click', function(e) {{
-                if (e.type === 'click' && !e.isTrusted) return;
-                handleClick(e);
-            }});
-            
-            // Autoplay solo en desktop
-            if (!/Mobi|Android/i.test(navigator.userAgent)) {{
-                setTimeout(function() {{
-                    tryPlay();
-                }}, 1500);
-            }} else {{
-                console.log('📱 Móvil detectado - toca el botón para reproducir');
-            }}
-        }})();
-    </script>
+        </script>
+    </body>
+    </html>
     """
-    st.markdown(audio_html, unsafe_allow_html=True)
+    
+    st.components.v1.html(audio_html, height=0, scrolling=False)
 
 # Función para agregar imagen de fondo
 def add_bg_image():
