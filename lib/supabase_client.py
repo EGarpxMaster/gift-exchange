@@ -279,16 +279,41 @@ def delete_gift_image(participant_id: str, option_index: int) -> None:
 
 # ============== PASSWORD FUNCTIONS ==============
 
-def get_participant_by_name_and_password(encrypted_name: str, password_hash: str) -> Optional[Dict[str, Any]]:
+def get_participant_by_name_and_password(name: str, password_hash: str, encryption_password: str) -> Optional[Dict[str, Any]]:
     """
-    Obtiene un participante por nombre encriptado y contraseña
+    Obtiene un participante por nombre (sin encriptar) y contraseña
     
     Args:
-        encrypted_name: Nombre encriptado del participante
-        password_hash: Hash de la contraseña
+        name: Nombre del participante en texto plano
+        password_hash: Hash de la contraseña para comparar
+        encryption_password: Contraseña de encriptación para desencriptar nombres
         
     Returns:
         Datos del participante o None si no existe o la contraseña es incorrecta
     """
-    response = supabase.table('participants').select('*').eq('encrypted_name', encrypted_name).eq('password_hash', password_hash).execute()
-    return response.data[0] if response.data else None
+    from lib.encryption import decrypt
+    
+    # Obtener todos los participantes
+    response = supabase.table('participants').select('*').execute()
+    
+    if not response.data:
+        return None
+    
+    # Buscar el participante desencriptando nombres
+    for participant in response.data:
+        try:
+            decrypted_name = decrypt(participant['encrypted_name'], encryption_password)
+            
+            # Verificar si el nombre coincide (ignorando mayúsculas/minúsculas y espacios extra)
+            if decrypted_name.strip().lower() == name.strip().lower():
+                # Verificar que el hash de contraseña coincida
+                if participant.get('password_hash') == password_hash:
+                    return participant
+                else:
+                    # Nombre correcto pero contraseña incorrecta
+                    return None
+        except:
+            # Si hay error al desencriptar, continuar con el siguiente
+            continue
+    
+    return None

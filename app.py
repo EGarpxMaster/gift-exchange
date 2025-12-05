@@ -398,9 +398,15 @@ def show_home():
         """, unsafe_allow_html=True)
         
         st.write("")
-        if st.button("🎁 Registrarse", use_container_width=True, key="btn_register"):
-            st.session_state.view = 'register'
-            st.rerun()
+        col_btn1, col_btn2 = st.columns(2)
+        with col_btn1:
+            if st.button("🎁 Registrarse", use_container_width=True, key="btn_register"):
+                st.session_state.view = 'register'
+                st.rerun()
+        with col_btn2:
+            if st.button("🔑 Ya estoy registrado", use_container_width=True, key="btn_login"):
+                st.session_state.view = 'dashboard'
+                st.rerun()
 
 
 def show_register():
@@ -565,49 +571,54 @@ def show_dashboard():
     if not st.session_state.participant_id:
         col1, col2, col3 = st.columns([1, 2, 1])
         with col2:
-            st.markdown("""
-            <div style="background: rgba(255, 255, 255, 0.95); padding: 2.5rem; border-radius: 16px; 
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); text-align: center;
-                        border-top: 4px solid #16a34a; border-bottom: 4px solid #dc2626;">
-                <h2 style="color: #dc2626;">📊 Acceso al Dashboard</h2>
-                <p style="color: #4b5563; margin: 1.5rem 0;">
-                    Ingresa tu nombre y contraseña para ver tu asignación
-                </p>
-            </div>
-            """, unsafe_allow_html=True)
-            st.write("")
-            
-            login_name = st.text_input("Nombre Completo", placeholder="Ej. Juan Pérez", key="login_name_input")
-            login_password = st.text_input("Contraseña", type="password", placeholder="Tu contraseña secreta", key="login_password_input")
-            
-            col_a, col_b = st.columns(2)
-            with col_a:
-                if st.button("🔓 Entrar", use_container_width=True, key="enter_dash"):
+            with st.form("login_form"):
+                st.markdown("""
+                <div>
+                    <h1 style="text-align: center; color: #dc2626; margin-bottom: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); font-size: 2.5rem;">
+                        🔑 Inicio de Sesión
+                    </h1>
+                </div>
+                """, unsafe_allow_html=True)
+                
+                st.write("")
+                
+                st.markdown("### 👤 Accede a tu Dashboard")
+                login_name = st.text_input("Nombre Completo", placeholder="Ej. Juan Pérez", key="login_name_input")
+                login_password = st.text_input("Contraseña", type="password", placeholder="Tu contraseña secreta", key="login_password_input")
+                st.caption("🔐 Ingresa el mismo nombre y contraseña que usaste al registrarte")
+                
+                st.write("")
+                col_a, col_b = st.columns(2)
+                with col_a:
+                    submit = st.form_submit_button("🔓 Entrar", use_container_width=True)
+                with col_b:
+                    back = st.form_submit_button("⬅️ Volver al inicio", use_container_width=True, type="secondary")
+                
+                if back:
+                    st.session_state.view = 'home'
+                    st.rerun()
+                
+                if submit:
                     if not login_name.strip() or not login_password:
                         st.error("Por favor completa todos los campos.")
                     else:
                         try:
-                            # Encriptar nombre
-                            encrypted_name = encrypt(login_name.strip(), DEFAULT_ENCRYPTION_PASSWORD)
                             # Hash de contraseña
                             password_hash = hash_password(login_password)
                             
-                            # Buscar participante
+                            # Buscar participante (pasando nombre sin encriptar)
                             from lib.supabase_client import get_participant_by_name_and_password
-                            participant = get_participant_by_name_and_password(encrypted_name, password_hash)
+                            participant = get_participant_by_name_and_password(login_name.strip(), password_hash, DEFAULT_ENCRYPTION_PASSWORD)
                             
                             if participant:
                                 st.session_state.participant_id = participant['id']
-                                st.session_state.participant_name = encrypted_name
+                                st.session_state.participant_name = participant['encrypted_name']
+                                st.success("✅ ¡Inicio de sesión exitoso!")
                                 st.rerun()
                             else:
                                 st.error("❌ Nombre o contraseña incorrectos.")
                         except Exception as e:
                             st.error(f"Error al iniciar sesión: {str(e)}")
-            with col_b:
-                if st.button("⬅️ Volver al inicio", use_container_width=True, type="secondary", key="back_dash"):
-                    st.session_state.view = 'home'
-                    st.rerun()
         return
     
     try:
@@ -629,117 +640,124 @@ def show_dashboard():
         except:
             decrypted_name = "[Nombre encriptado]"
         
-        # Header con diseño mejorado
-        st.markdown(f"""
-        <div style="background: rgba(255, 255, 255, 0.95); padding: 1.5rem; border-radius: 12px; 
-                    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.2); margin-bottom: 1.5rem;
-                    border-left: 6px solid #16a34a;">
-            <h2 style="color: #1f2937; margin: 0;">Hola, {decrypted_name} 👋</h2>
-            <span class="{'elite-badge' if user_data['category'] == 'elite' else 'diversion-badge'}">
-                Categoría {'Élite ($1,000)' if user_data['category'] == 'elite' else 'Diversión ($500)'}
-            </span>
-        </div>
-        """, unsafe_allow_html=True)
-        
-        col_logout = st.columns([3, 1])
-        with col_logout[1]:
-            if st.button("🚪 Salir", use_container_width=True, key="logout_btn"):
-                st.session_state.participant_id = None
-                st.session_state.view = 'home'
-                st.rerun()
-        
-        # Verificar si hay asignación
-        if user_data['assigned_to_id']:
-            match_data = get_participant_by_id(user_data['assigned_to_id'])
-            
-            # Verificar si se deben revelar los nombres
-            reveal_date = datetime(2025, 12, 24, 0, 0, 0)
-            should_reveal = settings['names_revealed'] or st.session_state.simulated_date >= reveal_date
-            
-            try:
-                decrypted_match = decrypt(match_data['encrypted_name'], DEFAULT_ENCRYPTION_PASSWORD) if should_reveal else None
-            except:
-                decrypted_match = None
-            
-            # Construir lista de deseos con imágenes
-            gift_options = match_data.get('gift_options', [])
-            gift_images = match_data.get('gift_images', [])
-            
-            # Renderizar el contenido completo en HTML
-            if should_reveal and decrypted_match:
+        # Contenedor principal centrado
+        col1, col2, col3 = st.columns([0.125, 0.75, 0.125])
+        with col2:
+            # Verificar si hay asignación
+            if user_data['assigned_to_id']:
+                match_data = get_participant_by_id(user_data['assigned_to_id'])
+                
+                # Verificar si se deben revelar los nombres
+                reveal_date = datetime(2025, 12, 24, 0, 0, 0)
+                should_reveal = settings['names_revealed'] or st.session_state.simulated_date >= reveal_date
+                
+                try:
+                    decrypted_match = decrypt(match_data['encrypted_name'], DEFAULT_ENCRYPTION_PASSWORD) if should_reveal else None
+                except:
+                    decrypted_match = None
+                
+                # Construir lista de deseos con imágenes
+                gift_options = match_data.get('gift_options', [])
+                gift_images = match_data.get('gift_images', [])
+                
+                # Contenedor completo en un solo bloque
                 st.markdown(f"""
                 <div style="background: rgba(255, 255, 255, 0.95); padding: 2.5rem; border-radius: 16px; 
-                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                            border-top: 4px solid #dc2626; border-bottom: 4px solid #16a34a;">
-                    <h2 style="color: #1f2937; margin-bottom: 1.5rem;">🎁 Tu Asignación</h2>
+                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
+                            border-top: 4px solid #16a34a; border-bottom: 4px solid #dc2626;
+                            backdrop-filter: blur(10px);">
+                    <div style="border-bottom: 2px solid #e5e7eb; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                        <h2 style="color: #1f2937; margin: 0 0 0.5rem 0;">Hola, {decrypted_name} 👋</h2>
+                        <span class="{'elite-badge' if user_data['category'] == 'elite' else 'diversion-badge'}">
+                            Categoría {'Élite ($1,000)' if user_data['category'] == 'elite' else 'Diversión ($500)'}
+                        </span>
+                    </div>
+                    <h2 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Tu Asignación</h2>
+                """, unsafe_allow_html=True)
+                
+                # Renderizar el contenido según el estado
+                if should_reveal and decrypted_match:
+                    st.markdown(f"""
                     <div style="background: rgba(34, 197, 94, 0.1); padding: 1.5rem; border-left: 4px solid #16a34a; margin-bottom: 1.5rem; border-radius: 8px; text-align: center;">
                         <h3 style="color: #16a34a; margin: 0 0 1rem 0;">¡Tu amigo secreto es!</h3>
                         <h1 style="color: #dc2626; margin: 0; text-shadow: 2px 2px 4px rgba(0,0,0,0.1); font-size: 2.5rem;">{decrypted_match}</h1>
                     </div>
                     <h3 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Lista de Deseos:</h3>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                # Mostrar cada regalo con su imagen si existe
-                for idx, gift in enumerate(gift_options):
-                    col1, col2 = st.columns([2, 1])
-                    with col1:
-                        st.markdown(f"**{idx+1}.** {gift}")
-                    with col2:
-                        if gift_images and idx < len(gift_images) and gift_images[idx]:
-                            st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
-                
-                st.balloons()
-            elif should_reveal and not decrypted_match:
-                st.markdown(f"""
-                <div style="background: rgba(255, 255, 255, 0.95); padding: 2.5rem; border-radius: 16px; 
-                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                            border-top: 4px solid #dc2626; border-bottom: 4px solid #16a34a;">
-                    <h2 style="color: #1f2937; margin-bottom: 1.5rem;">🎁 Tu Asignación</h2>
+                    """, unsafe_allow_html=True)
+                    
+                    # Mostrar cada regalo con su imagen si existe
+                    for idx, gift in enumerate(gift_options):
+                        col_gift1, col_gift2 = st.columns([2, 1])
+                        with col_gift1:
+                            st.markdown(f"**{idx+1}.** {gift}")
+                        with col_gift2:
+                            if gift_images and idx < len(gift_images) and gift_images[idx]:
+                                st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
+                    
+                    st.balloons()
+                elif should_reveal and not decrypted_match:
+                    st.markdown("""
                     <div style="background: rgba(239, 68, 68, 0.1); padding: 1.5rem; border-left: 4px solid #dc2626; margin-bottom: 1.5rem; border-radius: 8px;">
                         <p style="color: #dc2626; margin: 0;">❌ Error al desencriptar el nombre</p>
                     </div>
                     <h3 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Lista de Deseos:</h3>
-                </div>
-                """, unsafe_allow_html=True)
-                
-                for idx, gift in enumerate(gift_options):
-                    col1, col2 = st.columns([2, 1])
-                    with col1:
-                        st.markdown(f"**{idx+1}.** {gift}")
-                    with col2:
-                        if gift_images and idx < len(gift_images) and gift_images[idx]:
-                            st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
-            else:
-                st.markdown("""
-                <div style="background: rgba(255, 255, 255, 0.95); padding: 2.5rem; border-radius: 16px; 
-                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3);
-                            border-top: 4px solid #dc2626; border-bottom: 4px solid #16a34a;">
-                    <h2 style="color: #1f2937; margin-bottom: 1.5rem;">🎁 Tu Asignación</h2>
+                    """, unsafe_allow_html=True)
+                    
+                    for idx, gift in enumerate(gift_options):
+                        col_gift1, col_gift2 = st.columns([2, 1])
+                        with col_gift1:
+                            st.markdown(f"**{idx+1}.** {gift}")
+                        with col_gift2:
+                            if gift_images and idx < len(gift_images) and gift_images[idx]:
+                                st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
+                else:
+                    st.markdown("""
                     <div style="background: rgba(59, 130, 246, 0.1); padding: 1.5rem; border-left: 4px solid #3b82f6; margin-bottom: 1.5rem; border-radius: 8px;">
                         <p style="color: #1e40af; margin: 0;">🎄 El nombre se revelará el 24 de diciembre a medianoche</p>
                     </div>
                     <h3 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Lista de Deseos:</h3>
+                    """, unsafe_allow_html=True)
+                    
+                    for idx, gift in enumerate(gift_options):
+                        col_gift1, col_gift2 = st.columns([2, 1])
+                        with col_gift1:
+                            st.markdown(f"**{idx+1}.** {gift}")
+                        with col_gift2:
+                            if gift_images and idx < len(gift_images) and gift_images[idx]:
+                                st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
+                
+                # Cerrar el div principal
+                st.markdown("""
                 </div>
                 """, unsafe_allow_html=True)
                 
-                for idx, gift in enumerate(gift_options):
-                    col1, col2 = st.columns([2, 1])
-                    with col1:
-                        st.markdown(f"**{idx+1}.** {gift}")
-                    with col2:
-                        if gift_images and idx < len(gift_images) and gift_images[idx]:
-                            st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
-        else:
-            st.markdown("""
-            <div style="background: rgba(255, 255, 255, 0.95); padding: 2.5rem; border-radius: 16px; 
-                        box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); text-align: center;
-                        border-top: 4px solid #fbbf24;">
-                <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
-                <h3 style="color: #92400e;">El sorteo aún no se ha realizado</h3>
-                <p style="color: #4b5563; margin-top: 1rem;">¡Mantente atento! Te notificaremos cuando tengas tu asignación.</p>
-            </div>
-            """, unsafe_allow_html=True)
+            else:
+                # Sin asignación - todo en un bloque
+                st.markdown(f"""
+                <div style="background: rgba(255, 255, 255, 0.95); padding: 2.5rem; border-radius: 16px; 
+                            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
+                            border-top: 4px solid #16a34a; border-bottom: 4px solid #dc2626;
+                            backdrop-filter: blur(10px);">
+                    <div style="border-bottom: 2px solid #e5e7eb; padding-bottom: 1rem; margin-bottom: 1.5rem;">
+                        <h2 style="color: #1f2937; margin: 0 0 0.5rem 0;">Hola, {decrypted_name} 👋</h2>
+                        <span class="{'elite-badge' if user_data['category'] == 'elite' else 'diversion-badge'}">
+                            Categoría {'Élite ($1,000)' if user_data['category'] == 'elite' else 'Diversión ($500)'}
+                        </span>
+                    </div>
+                    <h2 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">📊 Estado de Participación</h2>
+                    <div style="background: rgba(251, 191, 36, 0.1); padding: 2rem; border-left: 4px solid #fbbf24; border-radius: 8px; text-align: center;">
+                        <div style="font-size: 3rem; margin-bottom: 1rem;">⏳</div>
+                        <h3 style="color: #92400e; margin: 0 0 0.5rem 0;">El sorteo aún no se ha realizado</h3>
+                        <p style="color: #4b5563; margin: 0;">¡Mantente atento! Te notificaremos cuando tengas tu asignación.</p>
+                    </div>
+                </div>
+                """, unsafe_allow_html=True)
+            
+            st.write("")
+            if st.button("🚪 Salir", use_container_width=True, key="logout_btn"):
+                st.session_state.participant_id = None
+                st.session_state.view = 'home'
+                st.rerun()
         
     except Exception as e:
         st.error(f"Error al cargar el dashboard: {str(e)}")
