@@ -36,111 +36,79 @@ DEFAULT_ENCRYPTION_PASSWORD = 'GiftExchange2025!'
 # Función para reproducir música de fondo
 def add_bg_music():
     """Agregar música de fondo navideña con botón de control para móviles"""
-    # URL del archivo de música en GitHub Raw
-    music_url = "https://raw.githubusercontent.com/EGarpxMaster/gift-exchange/main/music/Whispering%20Snowfall.mp3"
-    
-    audio_html = f"""
+    # Usar st.components.v1.html con height adecuado para que el botón sea visible
+    music_html = """
+    <div id="musicContainer">
+        <audio id="xmasMusic" loop>
+            <source src="https://raw.githubusercontent.com/EGarpxMaster/gift-exchange/main/music/Whispering%20Snowfall.mp3" type="audio/mpeg">
+        </audio>
+        <button id="musicBtn">🎵</button>
+    </div>
     <style>
-        @keyframes glow {{
-            0%, 100% {{ box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }}
-            50% {{ box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }}
-        }}
-        #musicToggle {{
+        #musicContainer {
             position: fixed;
+            bottom: 0;
+            right: 0;
+            width: 100px;
+            height: 100px;
+            pointer-events: none;
+            z-index: 999999;
+        }
+        #musicBtn {
+            position: absolute;
             bottom: 20px;
             right: 20px;
-            z-index: 999999;
+            width: 60px;
+            height: 60px;
+            border-radius: 50%;
             background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
             color: white;
             border: 2px solid #fbbf24;
-            border-radius: 50%;
-            width: 60px;
-            height: 60px;
             font-size: 24px;
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
-            transition: all 0.3s ease;
             animation: glow 2s ease-in-out infinite;
-            -webkit-tap-highlight-color: transparent;
+            pointer-events: all;
             outline: none;
-            touch-action: manipulation;
-            user-select: none;
-            -webkit-user-select: none;
-        }}
-        #musicToggle:active {{
+        }
+        #musicBtn:active {
             transform: scale(0.9);
-        }}
+        }
+        @keyframes glow {
+            0%, 100% { box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }
+            50% { box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }
+        }
     </style>
-    <audio id="bgMusic" loop preload="auto">
-        <source src="{music_url}" type="audio/mpeg">
-    </audio>
-    <button id="musicToggle" type="button">🎵</button>
     <script>
-        (function() {{
-            var music = document.getElementById('bgMusic');
-            var toggle = document.getElementById('musicToggle');
-            var isPlaying = false;
-            
-            if (!music || !toggle) {{
-                console.error('❌ Elementos no encontrados');
-                return;
-            }}
-            
-            console.log('✓ Elementos cargados');
-            
-            music.addEventListener('playing', function() {{
-                isPlaying = true;
-                toggle.innerHTML = '🔊';
-                console.log('▶️ Reproduciendo');
-            }});
-            
-            music.addEventListener('pause', function() {{
-                isPlaying = false;
-                toggle.innerHTML = '🎵';
-                console.log('⏸️ Pausado');
-            }});
-            
-            music.addEventListener('error', function() {{
-                toggle.innerHTML = '❌';
-                console.error('❌ Error al cargar música');
-            }});
-            
-            function togglePlay() {{
-                if (isPlaying) {{
-                    music.pause();
-                }} else {{
-                    music.volume = 0.5;
-                    music.play().then(function() {{
-                        console.log('✅ Play exitoso');
-                    }}).catch(function(err) {{
-                        console.error('❌ Play error:', err.message);
-                    }});
-                }}
-            }}
-            
-            toggle.addEventListener('touchend', function(e) {{
-                e.preventDefault();
-                togglePlay();
-            }}, {{ passive: false }});
-            
-            toggle.addEventListener('click', function(e) {{
-                togglePlay();
-            }});
-            
-            // Autoplay en desktop
-            if (!/Mobi|Android/i.test(navigator.userAgent)) {{
-                setTimeout(function() {{
-                    music.volume = 0.5;
-                    music.play().catch(function() {{
-                        console.log('Autoplay bloqueado - usa el botón');
-                    }});
-                }}, 1500);
-            }}
-        }})();
+        var audio = document.getElementById('xmasMusic');
+        var btn = document.getElementById('musicBtn');
+        
+        btn.addEventListener('click', function() {
+            if (audio.paused) {
+                audio.volume = 0.5;
+                audio.play();
+                btn.innerHTML = '🔊';
+            } else {
+                audio.pause();
+                btn.innerHTML = '🎵';
+            }
+        });
+        
+        // Autoplay en desktop
+        if (!/Mobi|Android/i.test(navigator.userAgent)) {
+            setTimeout(function() {
+                audio.volume = 0.5;
+                audio.play().then(function() {
+                    btn.innerHTML = '🔊';
+                }).catch(function() {
+                    // Silently fail
+                });
+            }, 1500);
+        }
     </script>
     """
     
-    st.markdown(audio_html, unsafe_allow_html=True)
+    st.components.v1.html(music_html, height=100, scrolling=False)
 
 # Función para agregar imagen de fondo
 def add_bg_image():
