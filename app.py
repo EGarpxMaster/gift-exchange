@@ -40,74 +40,37 @@ def add_bg_music():
         with open('music/Whispering Snowfall.mp3', 'rb') as audio_file:
             audio_bytes = audio_file.read()
             audio_base64 = base64.b64encode(audio_bytes).decode()
-            audio_html = f"""
-            <audio id="bgMusic" loop>
-                <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
-            </audio>
-            <button id="musicToggle" type="button" style="
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                z-index: 10000;
-                background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-                color: white;
-                border: 2px solid #fbbf24;
-                border-radius: 50%;
-                width: 60px;
-                height: 60px;
-                font-size: 24px;
-                cursor: pointer;
-                box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
-                transition: all 0.3s ease;
-                animation: glow 2s ease-in-out infinite;
-                -webkit-tap-highlight-color: transparent;
-            ">🎵</button>
-            <script>
-                (function() {{
-                    var isPlaying = false;
-                    var music = document.getElementById('bgMusic');
-                    var toggle = document.getElementById('musicToggle');
-                    
-                    function playMusic() {{
-                        music.play().then(function() {{
-                            isPlaying = true;
-                            toggle.innerHTML = '🔊';
-                        }}).catch(function(err) {{
-                            console.log('Play error:', err);
-                        }});
-                    }}
-                    
-                    function pauseMusic() {{
-                        music.pause();
-                        isPlaying = false;
-                        toggle.innerHTML = '🎵';
-                    }}
-                    
-                    function handleClick() {{
-                        if (isPlaying) {{
-                            pauseMusic();
-                        }} else {{
-                            playMusic();
-                        }}
-                        return false;
-                    }}
-                    
-                    // Múltiples eventos para compatibilidad
-                    toggle.addEventListener('click', handleClick, false);
-                    toggle.addEventListener('touchstart', function(e) {{
-                        e.preventDefault();
-                        handleClick();
-                    }}, false);
-                    
-                    // Intentar autoplay después de cargar
-                    window.addEventListener('load', function() {{
-                        setTimeout(function() {{
-                            playMusic();
-                        }}, 500);
-                    }});
-                }})();
-            </script>
+            
+            # Usar componente HTML persistente
+            import streamlit.components.v1 as components
+            
+            components.html(f"""
+            <div id="musicContainer">
+                <audio id="bgMusic" loop preload="auto">
+                    <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+                </audio>
+                <button id="musicToggle" type="button">🎵</button>
+            </div>
             <style>
+                #musicToggle {{
+                    position: fixed;
+                    bottom: 20px;
+                    right: 20px;
+                    z-index: 999999;
+                    background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+                    color: white;
+                    border: 2px solid #fbbf24;
+                    border-radius: 50%;
+                    width: 60px;
+                    height: 60px;
+                    font-size: 24px;
+                    cursor: pointer;
+                    box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+                    transition: all 0.3s ease;
+                    animation: glow 2s ease-in-out infinite;
+                    -webkit-tap-highlight-color: transparent;
+                    outline: none;
+                }}
                 @keyframes glow {{
                     0%, 100% {{ box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }}
                     50% {{ box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }}
@@ -116,9 +79,66 @@ def add_bg_music():
                     transform: scale(0.9);
                 }}
             </style>
-            """
-            st.markdown(audio_html, unsafe_allow_html=True)
-    except:
+            <script>
+                (function() {{
+                    var isPlaying = false;
+                    var music = document.getElementById('bgMusic');
+                    var toggle = document.getElementById('musicToggle');
+                    
+                    if (!music || !toggle) return;
+                    
+                    function playMusic() {{
+                        var playPromise = music.play();
+                        if (playPromise !== undefined) {{
+                            playPromise.then(function() {{
+                                isPlaying = true;
+                                toggle.innerHTML = '🔊';
+                                console.log('Música reproduciendo');
+                            }}).catch(function(err) {{
+                                console.log('Error play:', err);
+                                isPlaying = false;
+                                toggle.innerHTML = '🎵';
+                            }});
+                        }}
+                    }}
+                    
+                    function pauseMusic() {{
+                        music.pause();
+                        isPlaying = false;
+                        toggle.innerHTML = '🎵';
+                        console.log('Música pausada');
+                    }}
+                    
+                    function handleClick(e) {{
+                        if (e) {{
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                        console.log('Click en botón, isPlaying:', isPlaying);
+                        if (isPlaying) {{
+                            pauseMusic();
+                        }} else {{
+                            playMusic();
+                        }}
+                    }}
+                    
+                    // Eventos
+                    toggle.onclick = handleClick;
+                    toggle.ontouchend = function(e) {{
+                        e.preventDefault();
+                        handleClick(e);
+                    }};
+                    
+                    // Autoplay inicial
+                    setTimeout(function() {{
+                        console.log('Intentando autoplay...');
+                        playMusic();
+                    }}, 1000);
+                }})();
+            </script>
+            """, height=0)
+    except Exception as e:
+        print(f"Error loading music: {e}")
         pass  # Si no existe el archivo, continuar sin música
 
 # Función para agregar imagen de fondo
