@@ -40,176 +40,107 @@ def add_bg_music():
     music_url = "https://raw.githubusercontent.com/EGarpxMaster/gift-exchange/main/music/Whispering%20Snowfall.mp3"
     
     audio_html = f"""
-    <!DOCTYPE html>
-    <html>
-    <head>
-        <style>
-            body {{
-                margin: 0;
-                padding: 0;
-            }}
-            @keyframes glow {{
-                0%, 100% {{ box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }}
-                50% {{ box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }}
-            }}
-            #musicToggle {{
-                position: fixed;
-                bottom: 20px;
-                right: 20px;
-                z-index: 999999;
-                background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
-                color: white;
-                border: 2px solid #fbbf24;
-                border-radius: 50%;
-                width: 60px;
-                height: 60px;
-                font-size: 24px;
-                cursor: pointer;
-                box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
-                transition: all 0.3s ease;
-                animation: glow 2s ease-in-out infinite;
-                -webkit-tap-highlight-color: transparent;
-                outline: none;
-                touch-action: manipulation;
-                user-select: none;
-                -webkit-user-select: none;
-            }}
-            #musicToggle:active {{
-                transform: scale(0.9);
-            }}
-        </style>
-    </head>
-    <body>
-        <audio id="bgMusic" loop preload="auto">
-            <source src="{music_url}" type="audio/mpeg">
-        </audio>
-        <button id="musicToggle" type="button">🎵</button>
-        
-        <script>
-            console.log('🎼 Script iniciado');
-            
+    <style>
+        @keyframes glow {{
+            0%, 100% {{ box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }}
+            50% {{ box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }}
+        }}
+        #musicToggle {{
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 999999;
+            background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+            color: white;
+            border: 2px solid #fbbf24;
+            border-radius: 50%;
+            width: 60px;
+            height: 60px;
+            font-size: 24px;
+            cursor: pointer;
+            box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+            transition: all 0.3s ease;
+            animation: glow 2s ease-in-out infinite;
+            -webkit-tap-highlight-color: transparent;
+            outline: none;
+            touch-action: manipulation;
+            user-select: none;
+            -webkit-user-select: none;
+        }}
+        #musicToggle:active {{
+            transform: scale(0.9);
+        }}
+    </style>
+    <audio id="bgMusic" loop preload="auto">
+        <source src="{music_url}" type="audio/mpeg">
+    </audio>
+    <button id="musicToggle" type="button">🎵</button>
+    <script>
+        (function() {{
             var music = document.getElementById('bgMusic');
             var toggle = document.getElementById('musicToggle');
             var isPlaying = false;
             
-            console.log('🎵 Music element:', music);
-            console.log('🔘 Toggle element:', toggle);
-            
             if (!music || !toggle) {{
                 console.error('❌ Elementos no encontrados');
-            }} else {{
-                console.log('✓ Elementos encontrados correctamente');
-                
-                // Eventos de audio
-                music.addEventListener('loadedmetadata', function() {{
-                    console.log('📊 Metadata cargada, duración:', music.duration, 'segundos');
-                }});
-                
-                music.addEventListener('loadeddata', function() {{
-                    console.log('✓ Audio data cargado');
-                }});
-                
-                music.addEventListener('canplay', function() {{
-                    console.log('✓ Audio listo para reproducir');
-                }});
-                
-                music.addEventListener('error', function(e) {{
-                    console.error('❌ Error de audio:', music.error);
-                    if (music.error) {{
-                        console.error('Código de error:', music.error.code);
-                        console.error('Mensaje:', music.error.message);
-                    }}
-                    toggle.innerHTML = '⚠️';
-                }});
-                
-                music.addEventListener('playing', function() {{
-                    console.log('▶️ Audio reproduciendo');
-                    toggle.innerHTML = '🔊';
-                }});
-                
-                music.addEventListener('pause', function() {{
-                    console.log('⏸️ Audio pausado');
-                    toggle.innerHTML = '🎵';
-                }});
-                
-                function tryPlay() {{
-                    console.log('🎬 Intentando reproducir...');
-                    music.volume = 0.5;
-                    
-                    var playPromise = music.play();
-                    
-                    if (playPromise !== undefined) {{
-                        playPromise
-                            .then(function() {{
-                                isPlaying = true;
-                                toggle.innerHTML = '🔊';
-                                console.log('✅ Reproducción exitosa');
-                            }})
-                            .catch(function(error) {{
-                                console.error('❌ Error al reproducir:', error.name, '-', error.message);
-                                toggle.innerHTML = '🎵';
-                                isPlaying = false;
-                            }});
-                    }}
-                }}
-                
-                function pauseMusic() {{
-                    console.log('⏹️ Pausando música');
+                return;
+            }}
+            
+            console.log('✓ Elementos cargados');
+            
+            music.addEventListener('playing', function() {{
+                isPlaying = true;
+                toggle.innerHTML = '🔊';
+                console.log('▶️ Reproduciendo');
+            }});
+            
+            music.addEventListener('pause', function() {{
+                isPlaying = false;
+                toggle.innerHTML = '🎵';
+                console.log('⏸️ Pausado');
+            }});
+            
+            music.addEventListener('error', function() {{
+                toggle.innerHTML = '❌';
+                console.error('❌ Error al cargar música');
+            }});
+            
+            function togglePlay() {{
+                if (isPlaying) {{
                     music.pause();
-                    isPlaying = false;
-                    toggle.innerHTML = '🎵';
-                }}
-                
-                function handleClick(e) {{
-                    if (e) {{
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }}
-                    
-                    console.log('👆 Click - Estado actual:', isPlaying ? 'reproduciendo' : 'pausado');
-                    
-                    if (isPlaying) {{
-                        pauseMusic();
-                    }} else {{
-                        tryPlay();
-                    }}
-                    
-                    return false;
-                }}
-                
-                // Eventos de click
-                toggle.addEventListener('touchstart', function(e) {{
-                    console.log('📱 Touchstart detectado');
-                }}, {{ passive: true }});
-                
-                toggle.addEventListener('touchend', function(e) {{
-                    console.log('📱 Touchend detectado');
-                    e.preventDefault();
-                    e.stopPropagation();
-                    handleClick(null);
-                }}, {{ passive: false }});
-                
-                toggle.addEventListener('click', function(e) {{
-                    console.log('🖱️ Click detectado');
-                    handleClick(e);
-                }});
-                
-                // Intento de autoplay en desktop
-                if (!/Mobi|Android/i.test(navigator.userAgent)) {{
-                    console.log('💻 Desktop detectado - autoplay en 2 segundos');
-                    setTimeout(function() {{
-                        tryPlay();
-                    }}, 2000);
                 }} else {{
-                    console.log('📱 Móvil detectado - esperando interacción del usuario');
+                    music.volume = 0.5;
+                    music.play().then(function() {{
+                        console.log('✅ Play exitoso');
+                    }}).catch(function(err) {{
+                        console.error('❌ Play error:', err.message);
+                    }});
                 }}
             }}
-        </script>
-    </body>
-    </html>
+            
+            toggle.addEventListener('touchend', function(e) {{
+                e.preventDefault();
+                togglePlay();
+            }}, {{ passive: false }});
+            
+            toggle.addEventListener('click', function(e) {{
+                togglePlay();
+            }});
+            
+            // Autoplay en desktop
+            if (!/Mobi|Android/i.test(navigator.userAgent)) {{
+                setTimeout(function() {{
+                    music.volume = 0.5;
+                    music.play().catch(function() {{
+                        console.log('Autoplay bloqueado - usa el botón');
+                    }});
+                }}, 1500);
+            }}
+        }})();
+    </script>
     """
     
-    st.components.v1.html(audio_html, height=0, scrolling=False)
+    st.markdown(audio_html, unsafe_allow_html=True)
 
 # Función para agregar imagen de fondo
 def add_bg_image():
