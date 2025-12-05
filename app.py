@@ -44,7 +44,7 @@ def add_bg_music():
             <audio id="bgMusic" loop>
                 <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
             </audio>
-            <button id="musicToggle" style="
+            <button id="musicToggle" type="button" style="
                 position: fixed;
                 bottom: 20px;
                 right: 20px;
@@ -60,54 +60,51 @@ def add_bg_music():
                 box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
                 transition: all 0.3s ease;
                 animation: glow 2s ease-in-out infinite;
+                -webkit-tap-highlight-color: transparent;
             ">🎵</button>
             <script>
                 (function() {{
-                    let isPlaying = false;
-                    const music = document.getElementById('bgMusic');
-                    const toggle = document.getElementById('musicToggle');
+                    var isPlaying = false;
+                    var music = document.getElementById('bgMusic');
+                    var toggle = document.getElementById('musicToggle');
                     
-                    function toggleMusic(e) {{
-                        e.preventDefault();
-                        e.stopPropagation();
-                        
-                        if (isPlaying) {{
-                            music.pause();
-                            toggle.innerHTML = '🎵';
-                            isPlaying = false;
-                        }} else {{
-                            const playPromise = music.play();
-                            if (playPromise !== undefined) {{
-                                playPromise.then(() => {{
-                                    toggle.innerHTML = '🔊';
-                                    isPlaying = true;
-                                }}).catch((error) => {{
-                                    console.log('Error al reproducir:', error);
-                                    toggle.innerHTML = '🎵';
-                                    isPlaying = false;
-                                }});
-                            }}
-                        }}
+                    function playMusic() {{
+                        music.play().then(function() {{
+                            isPlaying = true;
+                            toggle.innerHTML = '🔊';
+                        }}).catch(function(err) {{
+                            console.log('Play error:', err);
+                        }});
                     }}
                     
-                    // Eventos para click y touch
-                    toggle.addEventListener('click', toggleMusic);
-                    toggle.addEventListener('touchend', toggleMusic);
+                    function pauseMusic() {{
+                        music.pause();
+                        isPlaying = false;
+                        toggle.innerHTML = '🎵';
+                    }}
                     
-                    // Intentar autoplay solo en escritorio
-                    setTimeout(() => {{
-                        const playPromise = music.play();
-                        if (playPromise !== undefined) {{
-                            playPromise.then(() => {{
-                                isPlaying = true;
-                                toggle.innerHTML = '🔊';
-                            }}).catch(() => {{
-                                // Autoplay bloqueado, dejar en pausa
-                                isPlaying = false;
-                                toggle.innerHTML = '🎵';
-                            }});
+                    function handleClick() {{
+                        if (isPlaying) {{
+                            pauseMusic();
+                        }} else {{
+                            playMusic();
                         }}
-                    }}, 100);
+                        return false;
+                    }}
+                    
+                    // Múltiples eventos para compatibilidad
+                    toggle.addEventListener('click', handleClick, false);
+                    toggle.addEventListener('touchstart', function(e) {{
+                        e.preventDefault();
+                        handleClick();
+                    }}, false);
+                    
+                    // Intentar autoplay después de cargar
+                    window.addEventListener('load', function() {{
+                        setTimeout(function() {{
+                            playMusic();
+                        }}, 500);
+                    }});
                 }})();
             </script>
             <style>
@@ -116,7 +113,7 @@ def add_bg_music():
                     50% {{ box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }}
                 }}
                 #musicToggle:active {{
-                    transform: scale(0.95);
+                    transform: scale(0.9);
                 }}
             </style>
             """
