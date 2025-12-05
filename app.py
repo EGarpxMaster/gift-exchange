@@ -35,15 +35,61 @@ DEFAULT_ENCRYPTION_PASSWORD = 'GiftExchange2025!'
 
 # Función para reproducir música de fondo
 def add_bg_music():
-    """Agregar música de fondo navideña"""
+    """Agregar música de fondo navideña con botón de control para móviles"""
     try:
         with open('music/Whispering Snowfall.mp3', 'rb') as audio_file:
             audio_bytes = audio_file.read()
             audio_base64 = base64.b64encode(audio_bytes).decode()
             audio_html = f"""
-            <audio autoplay loop>
+            <audio id="bgMusic" autoplay loop>
                 <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
             </audio>
+            <button id="musicToggle" style="
+                position: fixed;
+                bottom: 20px;
+                right: 20px;
+                z-index: 10000;
+                background: linear-gradient(135deg, #dc2626 0%, #991b1b 100%);
+                color: white;
+                border: 2px solid #fbbf24;
+                border-radius: 50%;
+                width: 60px;
+                height: 60px;
+                font-size: 24px;
+                cursor: pointer;
+                box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
+                transition: all 0.3s ease;
+                animation: glow 2s ease-in-out infinite;
+            " onclick="toggleMusic()">🔊</button>
+            <script>
+                let isPlaying = true;
+                const music = document.getElementById('bgMusic');
+                const toggle = document.getElementById('musicToggle');
+                
+                function toggleMusic() {{
+                    if (isPlaying) {{
+                        music.pause();
+                        toggle.innerHTML = '🎵';
+                        isPlaying = false;
+                    }} else {{
+                        music.play().catch(() => {{}});
+                        toggle.innerHTML = '🔊';
+                        isPlaying = true;
+                    }}
+                }}
+                
+                // Si autoplay falla (móviles), cambiar el icono
+                music.play().catch(() => {{
+                    toggle.innerHTML = '🎵';
+                    isPlaying = false;
+                }});
+            </script>
+            <style>
+                @keyframes glow {{
+                    0%, 100% {{ box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }}
+                    50% {{ box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }}
+                }}
+            </style>
             """
             st.markdown(audio_html, unsafe_allow_html=True)
     except:
