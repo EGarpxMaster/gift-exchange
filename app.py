@@ -41,7 +41,7 @@ def add_bg_music():
             audio_bytes = audio_file.read()
             audio_base64 = base64.b64encode(audio_bytes).decode()
             audio_html = f"""
-            <audio id="bgMusic" autoplay loop>
+            <audio id="bgMusic" loop>
                 <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
             </audio>
             <button id="musicToggle" style="
@@ -60,34 +60,63 @@ def add_bg_music():
                 box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
                 transition: all 0.3s ease;
                 animation: glow 2s ease-in-out infinite;
-            " onclick="toggleMusic()">🔊</button>
+            ">🎵</button>
             <script>
-                let isPlaying = true;
-                const music = document.getElementById('bgMusic');
-                const toggle = document.getElementById('musicToggle');
-                
-                function toggleMusic() {{
-                    if (isPlaying) {{
-                        music.pause();
-                        toggle.innerHTML = '🎵';
-                        isPlaying = false;
-                    }} else {{
-                        music.play().catch(() => {{}});
-                        toggle.innerHTML = '🔊';
-                        isPlaying = true;
+                (function() {{
+                    let isPlaying = false;
+                    const music = document.getElementById('bgMusic');
+                    const toggle = document.getElementById('musicToggle');
+                    
+                    function toggleMusic(e) {{
+                        e.preventDefault();
+                        e.stopPropagation();
+                        
+                        if (isPlaying) {{
+                            music.pause();
+                            toggle.innerHTML = '🎵';
+                            isPlaying = false;
+                        }} else {{
+                            const playPromise = music.play();
+                            if (playPromise !== undefined) {{
+                                playPromise.then(() => {{
+                                    toggle.innerHTML = '🔊';
+                                    isPlaying = true;
+                                }}).catch((error) => {{
+                                    console.log('Error al reproducir:', error);
+                                    toggle.innerHTML = '🎵';
+                                    isPlaying = false;
+                                }});
+                            }}
+                        }}
                     }}
-                }}
-                
-                // Si autoplay falla (móviles), cambiar el icono
-                music.play().catch(() => {{
-                    toggle.innerHTML = '🎵';
-                    isPlaying = false;
-                }});
+                    
+                    // Eventos para click y touch
+                    toggle.addEventListener('click', toggleMusic);
+                    toggle.addEventListener('touchend', toggleMusic);
+                    
+                    // Intentar autoplay solo en escritorio
+                    setTimeout(() => {{
+                        const playPromise = music.play();
+                        if (playPromise !== undefined) {{
+                            playPromise.then(() => {{
+                                isPlaying = true;
+                                toggle.innerHTML = '🔊';
+                            }}).catch(() => {{
+                                // Autoplay bloqueado, dejar en pausa
+                                isPlaying = false;
+                                toggle.innerHTML = '🎵';
+                            }});
+                        }}
+                    }}, 100);
+                }})();
             </script>
             <style>
                 @keyframes glow {{
                     0%, 100% {{ box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }}
                     50% {{ box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }}
+                }}
+                #musicToggle:active {{
+                    transform: scale(0.95);
                 }}
             </style>
             """
