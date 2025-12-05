@@ -42,8 +42,8 @@ def add_bg_music():
             audio_base64 = base64.b64encode(audio_bytes).decode()
             
             audio_html = f"""
-            <audio id="bgMusic" loop preload="auto">
-                <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mp3">
+            <audio id="bgMusic" loop preload="metadata">
+                <source src="data:audio/mp3;base64,{audio_base64}" type="audio/mpeg">
             </audio>
             <button id="musicToggle" type="button" style="
                 position: fixed;
@@ -81,43 +81,74 @@ def add_bg_music():
                     var music = document.getElementById('bgMusic');
                     var toggle = document.getElementById('musicToggle');
                     var isPlaying = false;
-                    var hasInteracted = false;
                     
                     if (!music || !toggle) {{
-                        console.error('No se encontraron elementos de audio');
+                        console.error('Elementos no encontrados');
                         return;
                     }}
                     
+                    // Log para debug
+                    music.addEventListener('loadeddata', function() {{
+                        console.log('Audio cargado, duración:', music.duration);
+                    }});
+                    
+                    music.addEventListener('error', function(e) {{
+                        console.error('Error al cargar audio:', e);
+                        toggle.innerHTML = '❌';
+                    }});
+                    
+                    music.addEventListener('playing', function() {{
+                        console.log('Audio reproduciendo');
+                    }});
+                    
+                    music.addEventListener('pause', function() {{
+                        console.log('Audio pausado');
+                    }});
+                    
                     function tryPlay() {{
-                        if (!hasInteracted) {{
-                            hasInteracted = true;
-                        }}
+                        console.log('Intentando reproducir...');
+                        music.volume = 0.5;
                         
-                        music.play()
-                            .then(function() {{
-                                isPlaying = true;
-                                toggle.innerHTML = '🔊';
-                                toggle.style.animation = 'glow 2s ease-in-out infinite';
-                            }})
-                            .catch(function(error) {{
-                                console.warn('No se pudo reproducir:', error);
-                                isPlaying = false;
-                                toggle.innerHTML = '🎵';
-                            }});
+                        var playPromise = music.play();
+                        
+                        if (playPromise !== undefined) {{
+                            playPromise
+                                .then(function() {{
+                                    isPlaying = true;
+                                    toggle.innerHTML = '🔊';
+                                    console.log('✓ Reproduciendo exitosamente');
+                                }})
+                                .catch(function(error) {{
+                                    console.error('✗ Error al reproducir:', error.name, error.message);
+                                    toggle.innerHTML = '⚠️';
+                                    isPlaying = false;
+                                    
+                                    // Mostrar alerta solo en móvil
+                                    if (/Mobi|Android/i.test(navigator.userAgent)) {{
+                                        setTimeout(function() {{
+                                            toggle.innerHTML = '🎵';
+                                        }}, 2000);
+                                    }}
+                                }});
+                        }}
                     }}
                     
-                    function pause() {{
+                    function pauseMusic() {{
                         music.pause();
                         isPlaying = false;
                         toggle.innerHTML = '🎵';
                     }}
                     
-                    function handleInteraction(e) {{
-                        e.preventDefault();
-                        e.stopPropagation();
+                    function handleClick(e) {{
+                        if (e) {{
+                            e.preventDefault();
+                            e.stopPropagation();
+                        }}
+                        
+                        console.log('Click detectado, isPlaying:', isPlaying);
                         
                         if (isPlaying) {{
-                            pause();
+                            pauseMusic();
                         }} else {{
                             tryPlay();
                         }}
@@ -125,29 +156,24 @@ def add_bg_music():
                         return false;
                     }}
                     
-                    // Múltiples eventos para máxima compatibilidad
-                    toggle.addEventListener('touchstart', handleInteraction, {{ passive: false }});
-                    toggle.addEventListener('touchend', handleInteraction, {{ passive: false }});
-                    toggle.addEventListener('click', handleInteraction, {{ passive: false }});
+                    // Un solo evento unificado
+                    toggle.addEventListener('touchend', function(e) {{
+                        e.preventDefault();
+                        e.stopPropagation();
+                        handleClick(null);
+                    }}, {{ passive: false }});
                     
-                    // Intentar autoplay en escritorio después de un delay
-                    setTimeout(function() {{
-                        if (!hasInteracted) {{
-                            tryPlay();
-                        }}
-                    }}, 1500);
+                    toggle.addEventListener('click', function(e) {{
+                        if (e.type === 'click' && !e.isTrusted) return;
+                        handleClick(e);
+                    }});
                     
-                    // Reintentar en eventos de usuario en el documento (solo desktop)
-                    var autoplayAttempts = 0;
-                    function tryAutoplay() {{
-                        if (!hasInteracted && autoplayAttempts < 1) {{
-                            autoplayAttempts++;
+                    // Autoplay solo en desktop
+                    if (!/Mobi|Android/i.test(navigator.userAgent)) {{
+                        setTimeout(function() {{
                             tryPlay();
-                        }}
+                        }}, 1500);
                     }}
-                    
-                    document.addEventListener('click', tryAutoplay, {{ once: true }});
-                    document.addEventListener('keydown', tryAutoplay, {{ once: true }});
                 }})();
             </script>
             """
