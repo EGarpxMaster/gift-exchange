@@ -36,28 +36,13 @@ DEFAULT_ENCRYPTION_PASSWORD = 'GiftExchange2025!'
 # Función para reproducir música de fondo
 def add_bg_music():
     """Agregar música de fondo navideña con botón de control para móviles"""
-    # Usar st.components.v1.html con height adecuado para que el botón sea visible
-    music_html = """
-    <div id="musicContainer">
-        <audio id="xmasMusic" loop>
+    # Primero agregar el contenedor y botón visual
+    st.markdown("""
+    <div id="musicContainer" style="position: fixed; bottom: 20px; left: 20px; z-index: 999999;">
+        <audio id="xmasMusic" loop preload="auto">
             <source src="https://raw.githubusercontent.com/EGarpxMaster/gift-exchange/main/music/Whispering%20Snowfall.mp3" type="audio/mpeg">
         </audio>
-        <button id="musicBtn">🎵</button>
-    </div>
-    <style>
-        #musicContainer {
-            position: fixed;
-            bottom: 0;
-            right: 0;
-            width: 100px;
-            height: 100px;
-            pointer-events: none;
-            z-index: 999999;
-        }
-        #musicBtn {
-            position: absolute;
-            bottom: 20px;
-            right: 20px;
+        <button id="musicBtn" style="
             width: 60px;
             height: 60px;
             border-radius: 50%;
@@ -68,47 +53,70 @@ def add_bg_music():
             cursor: pointer;
             box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4);
             animation: glow 2s ease-in-out infinite;
-            pointer-events: all;
             outline: none;
-        }
-        #musicBtn:active {
-            transform: scale(0.9);
-        }
+        ">🎵</button>
+    </div>
+    <style>
         @keyframes glow {
             0%, 100% { box-shadow: 0 4px 15px rgba(220, 38, 38, 0.4); }
             50% { box-shadow: 0 4px 25px rgba(220, 38, 38, 0.8); }
         }
-    </style>
-    <script>
-        var audio = document.getElementById('xmasMusic');
-        var btn = document.getElementById('musicBtn');
-        
-        btn.addEventListener('click', function() {
-            if (audio.paused) {
-                audio.volume = 0.5;
-                audio.play();
-                btn.innerHTML = '🔊';
-            } else {
-                audio.pause();
-                btn.innerHTML = '🎵';
-            }
-        });
-        
-        // Autoplay en desktop
-        if (!/Mobi|Android/i.test(navigator.userAgent)) {
-            setTimeout(function() {
-                audio.volume = 0.5;
-                audio.play().then(function() {
-                    btn.innerHTML = '🔊';
-                }).catch(function() {
-                    // Silently fail
-                });
-            }, 1500);
+        #musicBtn:active {
+            transform: scale(0.9);
         }
+    </style>
+    """, unsafe_allow_html=True)
+    
+    # Luego agregar el JavaScript funcional con componente
+    js_code = """
+    <script>
+        (function() {
+            function initMusic() {
+                var audio = parent.document.getElementById('xmasMusic');
+                var btn = parent.document.getElementById('musicBtn');
+                
+                if (!audio || !btn) {
+                    setTimeout(initMusic, 100);
+                    return;
+                }
+                
+                function toggleMusic() {
+                    if (audio.paused) {
+                        audio.volume = 0.5;
+                        audio.play().then(function() {
+                            btn.innerHTML = '🔊';
+                        }).catch(function(err) {
+                            console.error('Play error:', err);
+                        });
+                    } else {
+                        audio.pause();
+                        btn.innerHTML = '🎵';
+                    }
+                }
+                
+                btn.onclick = toggleMusic;
+                btn.ontouchend = function(e) {
+                    e.preventDefault();
+                    toggleMusic();
+                };
+                
+                // Autoplay en desktop
+                if (!/Mobi|Android/i.test(navigator.userAgent)) {
+                    setTimeout(function() {
+                        audio.volume = 0.5;
+                        audio.play().then(function() {
+                            btn.innerHTML = '🔊';
+                        }).catch(function() {});
+                    }, 1500);
+                }
+            }
+            
+            initMusic();
+        })();
     </script>
     """
     
-    st.components.v1.html(music_html, height=100, scrolling=False)
+    st.components.v1.html(js_code, height=0)
 
 # Función para agregar imagen de fondo
 def add_bg_image():
