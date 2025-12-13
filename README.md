@@ -9,7 +9,7 @@ Aplicación web construida con **Streamlit** para gestionar el intercambio de re
 - **Sorteo Automático:** Algoritmo que garantiza que nadie se toque a sí mismo y no haya intercambios equivalentes
 - **Gestión por Categorías:** Élite ($1,000 MXN) y Diversión ($500 MXN)
 - **Panel de Administrador:** Control total del sorteo, encriptación y revelación de nombres
-- **Validación de Fechas:** Registro solo del 5 al 15 de diciembre, revelación el 24 de diciembre
+- **Validación de Fechas:** Registro solo del 4 al 14 de diciembre, revelación el 24 de diciembre
 - **Base de Datos Supabase:** Conexión directa y segura a PostgreSQL
 - **Tema Navideño:** Diseño festivo con colores de temporada
 
@@ -129,13 +129,13 @@ git push heroku main
 
 ### Para Participantes
 
-1. **Registro (5-15 Diciembre):**
+1. **Registro (4-14 Diciembre):**
    - Ingresar nombre completo (se encriptará automáticamente)
    - Seleccionar categoría (Élite o Diversión)
    - Agregar mínimo 5 opciones de regalo
    - El sistema valida que no haya duplicados
 
-2. **Post-Sorteo (16-23 Diciembre):**
+2. **Post-Sorteo (15-23 Diciembre):**
    - Acceder al dashboard con tu ID de participante
    - Ver la lista de deseos de tu asignación
    - El nombre permanece oculto hasta el 24 de diciembre
@@ -150,7 +150,7 @@ git push heroku main
    - Ir a la aplicación y seleccionar "Panel de Admin"
 
 2. **Ejecutar el Sorteo:**
-   - Click en "Realizar Sorteo" (después del 15 de diciembre)
+   - Click en "Realizar Sorteo" (después del 14 de diciembre)
    - El algoritmo asigna automáticamente y valida las restricciones
 
 3. **Cambiar Contraseña de Encriptación (Opcional):**
@@ -223,8 +223,8 @@ Confirmar que los secrets estén configurados
 
 - **Contraseña por Defecto:** `GiftExchange2025!` (cambiar en producción)
 - **Fechas Importantes:**
-  - Registro: 5-15 de Diciembre
-  - Sorteo: 16 de Diciembre
+  - Registro: 4-14 de Diciembre
+  - Sorteo: 15 de Diciembre
   - Revelación: 24 de Diciembre
 - **Límite de Regalos:** Mínimo 5 opciones por participante
 - **Categorías:** Elite ($1,000) y Diversión ($500)

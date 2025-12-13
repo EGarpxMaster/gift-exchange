@@ -482,7 +482,7 @@ def show_register():
     """Formulario de registro"""
     # Validación de fechas
     start_date = date(2025, 12, 4)
-    end_date = date(2025, 12, 11)
+    end_date = date(2025, 12, 14)
     current_date = datetime.now().date()
     
     is_open = start_date <= current_date <= end_date
@@ -497,7 +497,7 @@ def show_register():
                 <div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div>
                 <h3 style="color: #dc2626; margin-bottom: 1rem;">Registro Cerrado</h3>
                 <p style="color: #4b5563; font-size: 1.1rem;">
-                    Las inscripciones solo están disponibles del 04 al 11 de Diciembre.
+                    Las inscripciones solo están disponibles del 04 al 14 de Diciembre.
                 </p>
                 <p style="color: #6b7280; margin-top: 1rem;">
                     Fecha actual: {current_date.strftime('%d/%m/%Y')}
