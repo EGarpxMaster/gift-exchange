@@ -10,7 +10,7 @@ Aplicación web construida con **Streamlit** para gestionar el intercambio de re
 - **Gestión por Categorías:** Élite ($1,000 MXN) y Diversión ($500 MXN)
 - **Panel de Administrador:** Control total del sorteo, encriptación y revelación de nombres
 - **Validación de Fechas:** Registro solo del 4 al 14 de diciembre, revelación el 24 de diciembre
-- **Base de Datos Firebase:** Firestore para datos y Storage para imágenes
+- **Base de Datos AppWrite:** Firestore-like NoSQL database con Storage integrado
 - **Tema Navideño:** Diseño festivo con colores de temporada
 
 ## 🚀 Configuración Inicial
@@ -18,22 +18,29 @@ Aplicación web construida con **Streamlit** para gestionar el intercambio de re
 ### 1. Requisitos Previos
 
 - Python 3.8 o superior
-- Cuenta en [Firebase](https://firebase.google.com/)
+- Cuenta en [AppWrite Cloud](https://cloud.appwrite.io/)
 
-### 2. Base de Datos (Firebase)
+### 2. Base de Datos (AppWrite)
 
-1. Crea un nuevo proyecto en [Firebase Console](https://console.firebase.google.com/)
-2. Habilita **Firestore Database** y **Firebase Storage**
-3. Descarga las credenciales de servicio (JSON) desde **Project Settings > Service Accounts**
-4. Consulta la guía completa en `FIREBASE_SETUP.md` para instrucciones detalladas
+1. Crea un nuevo proyecto en [AppWrite Cloud](https://cloud.appwrite.io/)
+2. Habilita **Database** y crea una base de datos llamada `gift_exchange`
+3. Crea las collections `participants` y `settings`
+4. Habilita **Storage** y crea un bucket para imágenes
+5. Ejecuta los scripts de configuración automática (ver paso 4)
+6. Consulta la guía completa en `APPWRITE_SETUP.md` para instrucciones detalladas
 
 ### 3. Variables de Entorno
 
 Crea un archivo `.env` en la raíz del proyecto:
 
 ```env
-FIREBASE_CREDENTIALS_PATH=/ruta/a/tus/credenciales/firebase-credentials.json
-FIREBASE_STORAGE_BUCKET=tu-proyecto.appspot.com
+APPWRITE_ENDPOINT=https://nyc.cloud.appwrite.io/v1
+APPWRITE_PROJECT_ID=tu_project_id
+APPWRITE_API_KEY=tu_api_key
+APPWRITE_DATABASE_ID=tu_database_id
+APPWRITE_PARTICIPANTS_COLLECTION_ID=participants
+APPWRITE_SETTINGS_COLLECTION_ID=settings
+APPWRITE_STORAGE_BUCKET_ID=tu_bucket_id
 ```
 
 ### 4. Instalación
@@ -43,13 +50,24 @@ FIREBASE_STORAGE_BUCKET=tu-proyecto.appspot.com
 git clone https://github.com/tu-usuario/gift-exchange.git
 cd gift-exchange
 
+# Crear entorno virtual
+python3 -m venv venv
+source venv/bin/activate  # En Windows: venv\Scripts\activate
+
 # Instalar dependencias
 pip install -r requirements.txt
+
+# Configurar AppWrite (crear schema y documento inicial)
+python setup_appwrite_schema.py
+python create_settings_document.py
 ```
 
 ### 5. Ejecución Local
 
 ```bash
+# Activar entorno virtual
+source venv/bin/activate  # En Windows: venv\Scripts\activate
+
 # Ejecutar la aplicación
 streamlit run app.py
 ```
@@ -63,7 +81,7 @@ La aplicación estará disponible en `http://localhost:8501`
 1. **Sube tu código a GitHub:**
    ```bash
    git add .
-   git commit -m "Aplicación Streamlit lista"
+   git commit -m "Aplicación Streamlit lista con AppWrite"
    git push origin main
    ```
 
@@ -76,24 +94,16 @@ La aplicación estará disponible en `http://localhost:8501`
 
 3. **Configura las variables de entorno:**
    - En "Advanced settings" > "Secrets"
-   - Agrega las credenciales de Firebase en formato TOML:
+   - Copia el contenido de `.streamlit/secrets.toml` o agrega manualmente:
      ```toml
-     FIREBASE_STORAGE_BUCKET = "tu-proyecto.appspot.com"
-     
-     [firebase_credentials]
-     type = "service_account"
-     project_id = "tu-proyecto-id"
-     private_key_id = "xxxxx"
-     private_key = "-----BEGIN PRIVATE KEY-----\nxxxxx\n-----END PRIVATE KEY-----\n"
-     client_email = "firebase-adminsdk-xxxxx@tu-proyecto.iam.gserviceaccount.com"
-     client_id = "xxxxx"
-     auth_uri = "https://accounts.google.com/o/oauth2/auth"
-     token_uri = "https://oauth2.googleapis.com/token"
-     auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
-     client_x509_cert_url = "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-xxxxx%40tu-proyecto.iam.gserviceaccount.com"
-     universe_domain = "googleapis.com"
+     APPWRITE_ENDPOINT = "https://nyc.cloud.appwrite.io/v1"
+     APPWRITE_PROJECT_ID = "tu_project_id"
+     APPWRITE_API_KEY = "tu_api_key_completa"
+     APPWRITE_DATABASE_ID = "tu_database_id"
+     APPWRITE_PARTICIPANTS_COLLECTION_ID = "participants"
+     APPWRITE_SETTINGS_COLLECTION_ID = "settings"
+     APPWRITE_STORAGE_BUCKET_ID = "tu_bucket_id"
      ```
-   - Consulta `FIREBASE_SETUP.md` para instrucciones detalladas
 
 4. **Deploy:**
    - Click en "Deploy!"
@@ -111,10 +121,20 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0
     envVars:
-      - key: FIREBASE_STORAGE_BUCKET
-        value: tu-proyecto.appspot.com
-      - key: FIREBASE_CREDENTIALS_PATH
-        value: /etc/secrets/firebase-credentials.json
+      - key: APPWRITE_ENDPOINT
+        value: https://nyc.cloud.appwrite.io/v1
+      - key: APPWRITE_PROJECT_ID
+        value: tu_project_id
+      - key: APPWRITE_API_KEY
+        value: tu_api_key
+      - key: APPWRITE_DATABASE_ID
+        value: tu_database_id
+      - key: APPWRITE_PARTICIPANTS_COLLECTION_ID
+        value: participants
+      - key: APPWRITE_SETTINGS_COLLECTION_ID
+        value: settings
+      - key: APPWRITE_STORAGE_BUCKET_ID
+        value: tu_bucket_id
 ```
 
 #### Heroku
@@ -125,9 +145,13 @@ echo "web: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0" > 
 
 # Desplegar
 heroku create gift-exchange-app
-heroku config:set FIREBASE_STORAGE_BUCKET="tu-proyecto.appspot.com"
-# Nota: Para Heroku, necesitas configurar las credenciales de Firebase como buildpack
-```
+heroku config:set APPWRITE_ENDPOINT="https://nyc.cloud.appwrite.io/v1"
+heroku config:set APPWRITE_PROJECT_ID="tu_project_id"
+heroku config:set APPWRITE_API_KEY="tu_api_key"
+heroku config:set APPWRITE_DATABASE_ID="tu_database_id"
+heroku config:set APPWRITE_PARTICIPANTS_COLLECTION_ID="participants"
+heroku config:set APPWRITE_SETTINGS_COLLECTION_ID="settings"
+heroku config:set APPWRITE_STORAGE_BUCKET_ID="tu_bucket_id"
 git push heroku main
 ```
 
@@ -171,7 +195,7 @@ git push heroku main
 
 - **Encriptación AES-256-GCM:** Nombres protegidos con estándar militar
 - **PBKDF2:** Derivación de claves con 100,000 iteraciones
-- **Firebase Security Rules:** Reglas de seguridad para Firestore y Storage
+- **AppWrite Security Rules:** Permisos configurables para collections y storage
 - **Variables de entorno:** Credenciales nunca en el código
 
 ## 🛠️ Estructura del Proyecto
@@ -181,16 +205,20 @@ gift-exchange/
 ├── app.py                      # Aplicación principal de Streamlit
 ├── requirements.txt            # Dependencias de Python
 ├── .env                        # Variables de entorno (NO subir a Git)
-├── FIREBASE_SETUP.md          # Guía completa de configuración de Firebase
+├── APPWRITE_SETUP.md          # Guía completa de configuración de AppWrite
 ├── .streamlit/
-│   └── config.toml            # Configuración del tema
+│   ├── config.toml            # Configuración del tema
+│   └── secrets.toml           # Secrets para Streamlit Cloud (NO subir a Git)
 ├── lib/
 │   ├── encryption.py          # Módulo de encriptación AES-256-GCM
 │   ├── sorteo.py              # Algoritmo de sorteo
-│   ├── firebase_client.py     # Cliente de Firebase (actual)
+│   ├── appwrite_client.py     # Cliente de AppWrite (actual)
+│   ├── firebase_client.py     # Cliente de Firebase (legacy)
 │   └── supabase_client.py     # Cliente de Supabase (legacy)
-└── firebase/
-    └── (credenciales locales - NO subir a Git)
+└── scripts/
+    ├── setup_appwrite_schema.py         # Configurar schema de AppWrite
+    ├── create_settings_document.py      # Crear documento inicial
+    └── test_appwrite_connection.py      # Probar conexión
 ```
 
 ## 🧪 Testing Local
@@ -208,12 +236,19 @@ gift-exchange/
 
 ## 🐛 Solución de Problemas
 
-### Error de conexión a Firebase
+### Error de conexión a AppWrite
 ```
-Verificar que FIREBASE_CREDENTIALS_PATH apunte al archivo JSON correcto
-Verificar que FIREBASE_STORAGE_BUCKET esté configurado
-Asegurarse de que Firebase Firestore y Storage estén habilitados
-Consultar FIREBASE_SETUP.md para más detalles
+Verificar que las variables de entorno estén correctamente configuradas
+Verificar que APPWRITE_PROJECT_ID y APPWRITE_DATABASE_ID sean correctos
+Asegurarse de que las collections existan en AppWrite
+Consultar APPWRITE_SETUP.md para más detalles
+```
+
+### Error "Attribute not found"
+```
+Ejecutar: python setup_appwrite_schema.py
+Verificar que todos los atributos estén creados en AppWrite Console
+Esperar unos segundos para que AppWrite procese los atributos
 ```
 
 ### Error de encriptación
@@ -226,14 +261,15 @@ Si se cambió, usar la nueva contraseña en el admin panel
 ```
 Verificar que requirements.txt esté completo
 Revisar los logs en Streamlit Cloud
-Confirmar que los secrets de Firebase estén configurados correctamente
+Confirmar que los secrets de AppWrite estén configurados correctamente
 Verificar que el formato TOML de las credenciales sea correcto
 ```
 
-### Error "DefaultCredentialsError"
+### Error al crear participante
 ```
-En local: Verificar que el archivo JSON de credenciales existe
-En Streamlit Cloud: Verificar que firebase_credentials esté en secrets
+Ejecutar: python test_appwrite_connection.py
+Verificar permisos de la collection en AppWrite Console
+Asegurarse de que todos los atributos estén disponibles
 ```
 
 ## 📝 Notas Importantes
