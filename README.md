@@ -10,7 +10,7 @@ Aplicación web construida con **Streamlit** para gestionar el intercambio de re
 - **Gestión por Categorías:** Élite ($1,000 MXN) y Diversión ($500 MXN)
 - **Panel de Administrador:** Control total del sorteo, encriptación y revelación de nombres
 - **Validación de Fechas:** Registro solo del 4 al 14 de diciembre, revelación el 24 de diciembre
-- **Base de Datos Supabase:** Conexión directa y segura a PostgreSQL
+- **Base de Datos Firebase:** Firestore para datos y Storage para imágenes
 - **Tema Navideño:** Diseño festivo con colores de temporada
 
 ## 🚀 Configuración Inicial
@@ -18,26 +18,22 @@ Aplicación web construida con **Streamlit** para gestionar el intercambio de re
 ### 1. Requisitos Previos
 
 - Python 3.8 o superior
-- Cuenta en [Supabase](https://supabase.com/)
+- Cuenta en [Firebase](https://firebase.google.com/)
 
-### 2. Base de Datos (Supabase)
+### 2. Base de Datos (Firebase)
 
-1. Crea un nuevo proyecto en [Supabase](https://supabase.com/)
-2. Ve al **SQL Editor** y ejecuta el script completo que se encuentra en `supabase/schema.sql`
-3. Verifica que se crearon las tablas:
-   - `participants` (con nombres encriptados)
-   - `settings` (configuración global)
-4. Obtén tus credenciales en **Project Settings > API**:
-   - `Project URL`
-   - `anon public` key
+1. Crea un nuevo proyecto en [Firebase Console](https://console.firebase.google.com/)
+2. Habilita **Firestore Database** y **Firebase Storage**
+3. Descarga las credenciales de servicio (JSON) desde **Project Settings > Service Accounts**
+4. Consulta la guía completa en `FIREBASE_SETUP.md` para instrucciones detalladas
 
 ### 3. Variables de Entorno
 
 Crea un archivo `.env` en la raíz del proyecto:
 
 ```env
-VITE_SUPABASE_URL=https://tu-proyecto.supabase.co
-VITE_SUPABASE_ANON_KEY=tu_clave_anonima_aqui
+FIREBASE_CREDENTIALS_PATH=/ruta/a/tus/credenciales/firebase-credentials.json
+FIREBASE_STORAGE_BUCKET=tu-proyecto.appspot.com
 ```
 
 ### 4. Instalación
@@ -80,11 +76,24 @@ La aplicación estará disponible en `http://localhost:8501`
 
 3. **Configura las variables de entorno:**
    - En "Advanced settings" > "Secrets"
-   - Agrega tu archivo `.env` completo:
+   - Agrega las credenciales de Firebase en formato TOML:
      ```toml
-     VITE_SUPABASE_URL = "https://tu-proyecto.supabase.co"
-     VITE_SUPABASE_ANON_KEY = "tu_clave_anonima_aqui"
+     FIREBASE_STORAGE_BUCKET = "tu-proyecto.appspot.com"
+     
+     [firebase_credentials]
+     type = "service_account"
+     project_id = "tu-proyecto-id"
+     private_key_id = "xxxxx"
+     private_key = "-----BEGIN PRIVATE KEY-----\nxxxxx\n-----END PRIVATE KEY-----\n"
+     client_email = "firebase-adminsdk-xxxxx@tu-proyecto.iam.gserviceaccount.com"
+     client_id = "xxxxx"
+     auth_uri = "https://accounts.google.com/o/oauth2/auth"
+     token_uri = "https://oauth2.googleapis.com/token"
+     auth_provider_x509_cert_url = "https://www.googleapis.com/oauth2/v1/certs"
+     client_x509_cert_url = "https://www.googleapis.com/robot/v1/metadata/x509/firebase-adminsdk-xxxxx%40tu-proyecto.iam.gserviceaccount.com"
+     universe_domain = "googleapis.com"
      ```
+   - Consulta `FIREBASE_SETUP.md` para instrucciones detalladas
 
 4. **Deploy:**
    - Click en "Deploy!"
@@ -94,10 +103,6 @@ La aplicación estará disponible en `http://localhost:8501`
 
 #### Render.com
 
-```bash
-# Crear archivo render.yaml en la raíz
-```
-
 ```yaml
 services:
   - type: web
@@ -106,10 +111,10 @@ services:
     buildCommand: pip install -r requirements.txt
     startCommand: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0
     envVars:
-      - key: VITE_SUPABASE_URL
-        value: https://tu-proyecto.supabase.co
-      - key: VITE_SUPABASE_ANON_KEY
-        value: tu_clave_anonima_aqui
+      - key: FIREBASE_STORAGE_BUCKET
+        value: tu-proyecto.appspot.com
+      - key: FIREBASE_CREDENTIALS_PATH
+        value: /etc/secrets/firebase-credentials.json
 ```
 
 #### Heroku
@@ -120,8 +125,9 @@ echo "web: streamlit run app.py --server.port=$PORT --server.address=0.0.0.0" > 
 
 # Desplegar
 heroku create gift-exchange-app
-heroku config:set VITE_SUPABASE_URL="https://tu-proyecto.supabase.co"
-heroku config:set VITE_SUPABASE_ANON_KEY="tu_clave_anonima_aqui"
+heroku config:set FIREBASE_STORAGE_BUCKET="tu-proyecto.appspot.com"
+# Nota: Para Heroku, necesitas configurar las credenciales de Firebase como buildpack
+```
 git push heroku main
 ```
 
@@ -165,7 +171,7 @@ git push heroku main
 
 - **Encriptación AES-256-GCM:** Nombres protegidos con estándar militar
 - **PBKDF2:** Derivación de claves con 100,000 iteraciones
-- **RLS en Supabase:** Row Level Security habilitado
+- **Firebase Security Rules:** Reglas de seguridad para Firestore y Storage
 - **Variables de entorno:** Credenciales nunca en el código
 
 ## 🛠️ Estructura del Proyecto
@@ -175,14 +181,16 @@ gift-exchange/
 ├── app.py                      # Aplicación principal de Streamlit
 ├── requirements.txt            # Dependencias de Python
 ├── .env                        # Variables de entorno (NO subir a Git)
+├── FIREBASE_SETUP.md          # Guía completa de configuración de Firebase
 ├── .streamlit/
 │   └── config.toml            # Configuración del tema
 ├── lib/
 │   ├── encryption.py          # Módulo de encriptación AES-256-GCM
 │   ├── sorteo.py              # Algoritmo de sorteo
-│   └── supabase_client.py     # Cliente de Supabase
-└── supabase/
-    └── schema.sql             # Esquema de la base de datos
+│   ├── firebase_client.py     # Cliente de Firebase (actual)
+│   └── supabase_client.py     # Cliente de Supabase (legacy)
+└── firebase/
+    └── (credenciales locales - NO subir a Git)
 ```
 
 ## 🧪 Testing Local
@@ -200,10 +208,12 @@ gift-exchange/
 
 ## 🐛 Solución de Problemas
 
-### Error de conexión a Supabase
+### Error de conexión a Firebase
 ```
-Verificar que las variables de entorno estén correctamente configuradas
-Asegurarse de que el proyecto de Supabase esté activo
+Verificar que FIREBASE_CREDENTIALS_PATH apunte al archivo JSON correcto
+Verificar que FIREBASE_STORAGE_BUCKET esté configurado
+Asegurarse de que Firebase Firestore y Storage estén habilitados
+Consultar FIREBASE_SETUP.md para más detalles
 ```
 
 ### Error de encriptación
@@ -216,7 +226,14 @@ Si se cambió, usar la nueva contraseña en el admin panel
 ```
 Verificar que requirements.txt esté completo
 Revisar los logs en Streamlit Cloud
-Confirmar que los secrets estén configurados
+Confirmar que los secrets de Firebase estén configurados correctamente
+Verificar que el formato TOML de las credenciales sea correcto
+```
+
+### Error "DefaultCredentialsError"
+```
+En local: Verificar que el archivo JSON de credenciales existe
+En Streamlit Cloud: Verificar que firebase_credentials esté en secrets
 ```
 
 ## 📝 Notas Importantes

@@ -20,7 +20,7 @@ st.set_page_config(
 # Importar módulos locales
 from lib.encryption import encrypt, decrypt, hash_password, verify_password
 from lib.sorteo import perform_sorteo, validate_assignments
-from lib.supabase_client import (
+from lib.appwrite_client import (
     get_participant_by_id,
     create_participant,
     check_name_exists,
@@ -615,7 +615,7 @@ def show_register():
                                 for idx, uploaded_file in enumerate(uploaded_images):
                                     if uploaded_file is not None and idx < len(gift_options):
                                         try:
-                                            from lib.supabase_client import upload_gift_image
+                                            from lib.appwrite_client import upload_gift_image
                                             image_bytes = uploaded_file.read()
                                             image_url = upload_gift_image(participant_id, idx, image_bytes, uploaded_file.name)
                                             gift_image_urls.append(image_url)
@@ -676,7 +676,7 @@ def show_dashboard():
                             password_hash = hash_password(login_password)
                             
                             # Buscar participante (pasando nombre sin encriptar)
-                            from lib.supabase_client import get_participant_by_name_and_password
+                            from lib.appwrite_client import get_participant_by_name_and_password
                             participant = get_participant_by_name_and_password(login_name.strip(), password_hash, DEFAULT_ENCRYPTION_PASSWORD)
                             
                             if participant:
