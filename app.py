@@ -1003,7 +1003,7 @@ def show_admin():
 
 # Navegación principal
 def main():
-        auto_run_sorteo()
+    auto_run_sorteo()
     if st.session_state.view == 'home':
         show_home()
     elif st.session_state.view == 'register':
