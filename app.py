@@ -27,10 +27,6 @@ def auto_run_sorteo():
         else:
             print('No hay suficientes participantes para sorteo automático')
 
-"""
-🎄 Intercambio de Regalos 2025 - Streamlit App
-Aplicación para gestionar el intercambio de regalos con encriptación y sorteo automático.
-"""
 
 import streamlit as st
 from datetime import datetime, date
