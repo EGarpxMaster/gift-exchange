@@ -1,3 +1,32 @@
+# --- Sorteo automático al cerrar registro ---
+def auto_run_sorteo():
+    import pytz
+    tz = pytz.timezone('America/Bogota')
+    sorteo_time = tz.localize(datetime(2025, 12, 15, 5, 0, 0))
+    now_utc = datetime.now(pytz.utc)
+    now = now_utc.astimezone(tz)
+    settings = get_settings()
+    if not settings.get('sorteo_completed', False) and now >= sorteo_time:
+        participants = get_participants()
+        elite_parts = [{'id': p['id'], 'category': p['category']} for p in participants if p['category'] == 'elite']
+        div_parts = [{'id': p['id'], 'category': p['category']} for p in participants if p['category'] == 'diversion']
+        if len(elite_parts) >= 2 or len(div_parts) >= 2:
+            try:
+                assignments = perform_sorteo(elite_parts, div_parts)
+                all_parts = [{'id': p['id'], 'category': p['category']} for p in participants]
+                validation = validate_assignments(all_parts, assignments)
+                if validation['valid']:
+                    for participant_id, assigned_to_id in assignments.items():
+                        update_participant_assignment(participant_id, assigned_to_id)
+                    update_settings({'sorteo_completed': True})
+                    print('✅ Sorteo realizado automáticamente')
+                else:
+                    print('❌ Validación falló:', validation['errors'])
+            except Exception as e:
+                print('❌ Error en sorteo automático:', str(e))
+        else:
+            print('No hay suficientes participantes para sorteo automático')
+
 """
 🎄 Intercambio de Regalos 2025 - Streamlit App
 Aplicación para gestionar el intercambio de regalos con encriptación y sorteo automático.
@@ -974,6 +1003,7 @@ def show_admin():
 
 # Navegación principal
 def main():
+        auto_run_sorteo()
     if st.session_state.view == 'home':
         show_home()
     elif st.session_state.view == 'register':
