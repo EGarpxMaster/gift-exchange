@@ -459,8 +459,8 @@ def show_home():
             <hr style="border: 1px solid #e5e7eb; margin: 1.5rem 0;">
             <h3 style="color: #16a34a; margin-top: 1.5rem; margin-bottom: 1rem;">📋 Cronograma:</h3>
             <ul style="color: #4b5563; line-height: 2; font-size: 0.95rem; margin-left: 1.5rem;">
-                <li>✨ <strong>Registro:</strong> Del 04 al 11 de diciembre</li>
-                <li>🎲 <strong>Sorteo:</strong> Se realizará el 12 de diciembre</li>
+                <li>✨ <strong>Registro:</strong> Del 04 de diciembre al 15 de diciembre, 05:00 hrs (GMT-5)</li>
+                <li>🎲 <strong>Sorteo:</strong> Se realizará el 15 de diciembre a las 05:00 hrs (GMT-5)</li>
                 <li>🎁 <strong>Revelación:</strong> 24 de diciembre a medianoche</li>
             </ul>
         </div>
@@ -481,10 +481,13 @@ def show_home():
 def show_register():
     """Formulario de registro"""
     # Validación de fechas
-    start_date = date(2025, 12, 4)
-    end_date = date(2025, 12, 14)
-    current_date = datetime.now().date()
-    
+    from datetime import time
+    import pytz
+    tz = pytz.timezone('America/Bogota')  # GMT-5 sin horario de verano
+    start_date = tz.localize(datetime(2025, 12, 4, 0, 0, 0))
+    end_date = tz.localize(datetime(2025, 12, 15, 5, 0, 0))  # 15 dic 2025, 05:00 GMT-5
+    now_utc = datetime.now(pytz.utc)
+    current_date = now_utc.astimezone(tz)
     is_open = start_date <= current_date <= end_date
     
     col1, col2, col3 = st.columns([1, 2, 1])
@@ -497,10 +500,10 @@ def show_register():
                 <div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div>
                 <h3 style="color: #dc2626; margin-bottom: 1rem;">Registro Cerrado</h3>
                 <p style="color: #4b5563; font-size: 1.1rem;">
-                    Las inscripciones solo están disponibles del 04 al 14 de Diciembre.
+                    Las inscripciones solo están disponibles del 04 de diciembre al 15 de diciembre, 05:00 hrs (GMT-5).
                 </p>
                 <p style="color: #6b7280; margin-top: 1rem;">
-                    Fecha actual: {current_date.strftime('%d/%m/%Y')}
+                    Fecha y hora actual: {current_date.strftime('%d/%m/%Y %H:%M:%S')} (GMT-5)
                 </p>
             </div>
             """, unsafe_allow_html=True)

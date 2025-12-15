@@ -12,3 +12,6 @@ cryptography>=44.0.0
 
 # Utilidades
 python-dotenv>=1.0.0
+
+# Manejo de zona horaria
+pytz
