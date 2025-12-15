@@ -619,8 +619,8 @@ def show_register():
                     st.error("La contraseña debe tener al menos 6 caracteres.")
                 elif password != password_confirm:
                     st.error("Las contraseñas no coinciden.")
-                elif len(gift_options) < 5:
-                    st.error(f"Por favor agrega al menos 5 opciones de regalo. Tienes {len(gift_options)}.")
+                elif len(gift_options) < 3:
+                    st.error(f"Por favor agrega al menos 3 opciones de regalo. Tienes {len(gift_options)}.")
                 else:
                     try:
                         with st.spinner("Registrando..."):
@@ -644,8 +644,10 @@ def show_register():
                                     if uploaded_file is not None and idx < len(gift_options):
                                         try:
                                             from lib.appwrite_client import upload_gift_image
-                                            image_bytes = uploaded_file.read()
-                                            image_url = upload_gift_image(participant_id, idx, image_bytes, uploaded_file.name)
+                                            if uploaded_file is not None and hasattr(uploaded_file, 'read') and hasattr(uploaded_file, 'name'):
+                                                image_url = upload_gift_image(participant_id, idx, uploaded_file, uploaded_file.name)
+                                            else:
+                                                image_url = None
                                             gift_image_urls.append(image_url)
                                         except Exception as img_error:
                                             st.warning(f"No se pudo subir la imagen {idx+1}: {str(img_error)}")
@@ -821,8 +823,17 @@ def show_dashboard():
                             for idx, file in enumerate(uploaded_files):
                                 if file is not None:
                                     try:
-                                        image_bytes = file.read()
-                                        image_url = upload_gift_image(user_data['id'], idx, image_bytes, file.name)
+                                        if file is not None and hasattr(file, 'read') and hasattr(file, 'name'):
+                                            try:
+                                                image_url = upload_gift_image(user_data['id'], idx, file, file.name)
+                                            except Exception as img_error:
+                                                st.warning(f"No se pudo subir la imagen {idx+1}: {str(img_error)}")
+                                                image_url = None
+                                        elif file is not None:
+                                            st.warning(f"El archivo seleccionado para la opción {idx+1} no es válido. Usa solo archivos seleccionados en el formulario.")
+                                            image_url = None
+                                        else:
+                                            image_url = None
                                         new_gift_images[idx] = image_url
                                     except Exception as img_error:
                                         st.warning(f"No se pudo subir la imagen {idx+1}: {str(img_error)}")

@@ -380,14 +380,14 @@ def delete_participant(participant_id: str) -> None:
 
 # ============== STORAGE FUNCTIONS ==============
 
-def upload_gift_image(participant_id: str, option_index: int, image_bytes: bytes, file_name: str) -> str:
+def upload_gift_image(participant_id: str, option_index: int, file_obj, file_name: str) -> str:
     """
     Sube una imagen de regalo a AppWrite Storage
     
     Args:
         participant_id: ID del participante
         option_index: Índice de la opción de regalo (0-6)
-        image_bytes: Bytes de la imagen
+        file_obj: Objeto file-like de st.file_uploader
         file_name: Nombre original del archivo
         
     Returns:
@@ -397,27 +397,25 @@ def upload_gift_image(participant_id: str, option_index: int, image_bytes: bytes
         raise ValueError("APPWRITE_STORAGE_BUCKET_ID no está configurado")
     
     try:
-        # Crear nombre único para el archivo
-        file_extension = file_name.split('.')[-1] if '.' in file_name else 'jpg'
+        print(f"[DEBUG] upload_gift_image: type={type(file_obj)}, attrs={dir(file_obj) if file_obj else None}")
+        # Solo aceptar archivos file-like de Streamlit
+        if not (file_obj and hasattr(file_obj, 'read') and hasattr(file_obj, 'name')):
+            print(f"[ERROR] Archivo inválido: {type(file_obj)}")
+            raise Exception("El archivo no es válido para subir. Usa solo archivos seleccionados en el formulario.")
+        file_obj.name = file_name
         file_id = f"{participant_id}_option_{option_index}"
-        
-        # AppWrite requiere un objeto tipo archivo
-        from io import BytesIO
-        file_obj = BytesIO(image_bytes)
-        file_obj.name = f"option_{option_index}.{file_extension}"
-        
-        # Subir archivo
+        print(f"[DEBUG] Subiendo archivo: {file_obj.name}, id={file_id}")
         result = storage.create_file(
             bucket_id=APPWRITE_STORAGE_BUCKET_ID,
             file_id=file_id,
             file=file_obj
         )
-        
-        # Obtener URL pública
+        print(f"[DEBUG] Resultado AppWrite: {result}")
         file_url = f"{APPWRITE_ENDPOINT}/storage/buckets/{APPWRITE_STORAGE_BUCKET_ID}/files/{result['$id']}/view?project={APPWRITE_PROJECT_ID}"
-        
+        print(f"[DEBUG] URL generada: {file_url}")
         return file_url
     except Exception as e:
+        print(f"[ERROR] upload_gift_image: {str(e)}")
         raise Exception(f"Error al subir imagen: {str(e)}")
 
 
