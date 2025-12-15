@@ -652,7 +652,16 @@ def show_register():
                                             gift_image_urls.append(None)
                                     else:
                                         gift_image_urls.append(None)
-                                
+
+                                # Actualizar participante con las URLs de imágenes
+                                from lib.appwrite_client import databases, APPWRITE_DATABASE_ID, APPWRITE_PARTICIPANTS_COLLECTION_ID
+                                databases.update_document(
+                                    database_id=APPWRITE_DATABASE_ID,
+                                    collection_id=APPWRITE_PARTICIPANTS_COLLECTION_ID,
+                                    document_id=participant_id,
+                                    data={"gift_images": gift_image_urls}
+                                )
+
                                 st.session_state.participant_id = participant_id
                                 st.session_state.participant_name = encrypted_name
                                 st.success("✅ ¡Registro exitoso!")
@@ -773,7 +782,60 @@ def show_dashboard():
                 """, unsafe_allow_html=True)
                 
                 # Renderizar el contenido según el estado
-                if should_reveal and decrypted_match:
+                if not should_reveal:
+                    st.markdown("""
+                    <div style="background: rgba(59, 130, 246, 0.1); padding: 1.5rem; border-left: 4px solid #3b82f6; margin-bottom: 1.5rem; border-radius: 8px;">
+                        <p style="color: #1e40af; margin: 0;">🎄 El nombre se revelará el 24 de diciembre a medianoche</p>
+                    </div>
+                    <h3 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Edita tu Lista de Deseos:</h3>
+                    """, unsafe_allow_html=True)
+                    with st.form("edit_gift_options_form"):
+                        new_gift_options = []
+                        new_gift_links = []
+                        new_gift_images = list(gift_images) if gift_images else [None]*len(gift_options)
+                        uploaded_files = [None]*len(gift_options)
+                        for idx, gift in enumerate(gift_options):
+                            col1, col2, col3 = st.columns([2,2,2])
+                            with col1:
+                                gift_text, sep, link = gift.partition("|")
+                                gift_val = st.text_input(f"Opción {idx+1}", value=gift_text.strip(), key=f"edit_gift_{idx}")
+                                new_gift_options.append(gift_val)
+                            with col2:
+                                link_val = st.text_input(f"Link (opcional) {idx+1}", value=link.strip() if sep else "", key=f"edit_link_{idx}")
+                                new_gift_links.append(link_val)
+                            with col3:
+                                if gift_images and idx < len(gift_images) and gift_images[idx]:
+                                    st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
+                                uploaded_files[idx] = st.file_uploader(f"Nueva imagen (opcional) {idx+1}", type=["png","jpg","jpeg","webp"], key=f"edit_img_{idx}")
+                        save = st.form_submit_button("💾 Guardar Cambios")
+                        if save:
+                            # Construir gift_options con link
+                            final_gift_options = []
+                            for g, l in zip(new_gift_options, new_gift_links):
+                                entry = g.strip()
+                                if l.strip():
+                                    entry += f" | {l.strip()}"
+                                final_gift_options.append(entry)
+                            # Subir imágenes nuevas si hay
+                            from lib.appwrite_client import upload_gift_image, databases, APPWRITE_DATABASE_ID, APPWRITE_PARTICIPANTS_COLLECTION_ID
+                            for idx, file in enumerate(uploaded_files):
+                                if file is not None:
+                                    try:
+                                        image_bytes = file.read()
+                                        image_url = upload_gift_image(user_data['id'], idx, image_bytes, file.name)
+                                        new_gift_images[idx] = image_url
+                                    except Exception as img_error:
+                                        st.warning(f"No se pudo subir la imagen {idx+1}: {str(img_error)}")
+                            # Actualizar en AppWrite
+                            databases.update_document(
+                                database_id=APPWRITE_DATABASE_ID,
+                                collection_id=APPWRITE_PARTICIPANTS_COLLECTION_ID,
+                                document_id=user_data['id'],
+                                data={"gift_options": final_gift_options, "gift_images": new_gift_images}
+                            )
+                            st.success("Cambios guardados correctamente.")
+                            st.rerun()
+                elif should_reveal and decrypted_match:
                     st.markdown(f"""
                     <div style="background: rgba(34, 197, 94, 0.1); padding: 1.5rem; border-left: 4px solid #16a34a; margin-bottom: 1.5rem; border-radius: 8px; text-align: center;">
                         <h3 style="color: #16a34a; margin: 0 0 1rem 0;">¡Tu amigo secreto es!</h3>
@@ -781,8 +843,6 @@ def show_dashboard():
                     </div>
                     <h3 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Lista de Deseos:</h3>
                     """, unsafe_allow_html=True)
-                    
-                    # Mostrar cada regalo con su imagen si existe
                     for idx, gift in enumerate(gift_options):
                         col_gift1, col_gift2 = st.columns([2, 1])
                         with col_gift1:
@@ -790,7 +850,6 @@ def show_dashboard():
                         with col_gift2:
                             if gift_images and idx < len(gift_images) and gift_images[idx]:
                                 st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
-                    
                     st.balloons()
                 elif should_reveal and not decrypted_match:
                     st.markdown("""
@@ -799,22 +858,6 @@ def show_dashboard():
                     </div>
                     <h3 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Lista de Deseos:</h3>
                     """, unsafe_allow_html=True)
-                    
-                    for idx, gift in enumerate(gift_options):
-                        col_gift1, col_gift2 = st.columns([2, 1])
-                        with col_gift1:
-                            st.markdown(f"**{idx+1}.** {gift}")
-                        with col_gift2:
-                            if gift_images and idx < len(gift_images) and gift_images[idx]:
-                                st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
-                else:
-                    st.markdown("""
-                    <div style="background: rgba(59, 130, 246, 0.1); padding: 1.5rem; border-left: 4px solid #3b82f6; margin-bottom: 1.5rem; border-radius: 8px;">
-                        <p style="color: #1e40af; margin: 0;">🎄 El nombre se revelará el 24 de diciembre a medianoche</p>
-                    </div>
-                    <h3 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Lista de Deseos:</h3>
-                    """, unsafe_allow_html=True)
-                    
                     for idx, gift in enumerate(gift_options):
                         col_gift1, col_gift2 = st.columns([2, 1])
                         with col_gift1:
@@ -829,7 +872,7 @@ def show_dashboard():
                 """, unsafe_allow_html=True)
                 
             else:
-                # Sin asignación - todo en un bloque
+                # Sin asignación - mostrar edición de regalos
                 st.markdown(f"""
                 <div style="background: rgba(255, 255, 255, 0.95); padding: 2.5rem; border-radius: 16px; 
                             box-shadow: 0 8px 32px rgba(0, 0, 0, 0.3); 
@@ -847,9 +890,57 @@ def show_dashboard():
                         <h3 style="color: #92400e; margin: 0 0 0.5rem 0;">El sorteo aún no se ha realizado</h3>
                         <p style="color: #4b5563; margin: 0;">¡Mantente atento! Te notificaremos cuando tengas tu asignación.</p>
                     </div>
-                </div>
+                    <h3 style="color: #1f2937; margin: 1.5rem 0 1rem 0;">🎁 Edita tu Lista de Deseos:</h3>
                 """, unsafe_allow_html=True)
-            
+                gift_options = user_data.get('gift_options', [])
+                gift_images = user_data.get('gift_images', [])
+                with st.form("edit_gift_options_form"):
+                    new_gift_options = []
+                    new_gift_links = []
+                    new_gift_images = list(gift_images) if gift_images else [None]*len(gift_options)
+                    uploaded_files = [None]*len(gift_options)
+                    for idx, gift in enumerate(gift_options):
+                        col1, col2, col3 = st.columns([2,2,2])
+                        with col1:
+                            gift_text, sep, link = gift.partition("|")
+                            gift_val = st.text_input(f"Opción {idx+1}", value=gift_text.strip(), key=f"edit_gift_{idx}")
+                            new_gift_options.append(gift_val)
+                        with col2:
+                            link_val = st.text_input(f"Link (opcional) {idx+1}", value=link.strip() if sep else "", key=f"edit_link_{idx}")
+                            new_gift_links.append(link_val)
+                        with col3:
+                            if gift_images and idx < len(gift_images) and gift_images[idx]:
+                                st.image(gift_images[idx], caption=f"Opción {idx+1}", use_container_width=True)
+                            uploaded_files[idx] = st.file_uploader(f"Nueva imagen (opcional) {idx+1}", type=["png","jpg","jpeg","webp"], key=f"edit_img_{idx}")
+                    save = st.form_submit_button("💾 Guardar Cambios")
+                    if save:
+                        # Construir gift_options con link
+                        final_gift_options = []
+                        for g, l in zip(new_gift_options, new_gift_links):
+                            entry = g.strip()
+                            if l.strip():
+                                entry += f" | {l.strip()}"
+                            final_gift_options.append(entry)
+                        # Subir imágenes nuevas si hay
+                        from lib.appwrite_client import upload_gift_image, databases, APPWRITE_DATABASE_ID, APPWRITE_PARTICIPANTS_COLLECTION_ID
+                        for idx, file in enumerate(uploaded_files):
+                            if file is not None:
+                                try:
+                                    image_bytes = file.read()
+                                    image_url = upload_gift_image(user_data['id'], idx, image_bytes, file.name)
+                                    new_gift_images[idx] = image_url
+                                except Exception as img_error:
+                                    st.warning(f"No se pudo subir la imagen {idx+1}: {str(img_error)}")
+                        # Actualizar en AppWrite
+                        databases.update_document(
+                            database_id=APPWRITE_DATABASE_ID,
+                            collection_id=APPWRITE_PARTICIPANTS_COLLECTION_ID,
+                            document_id=user_data['id'],
+                            data={"gift_options": final_gift_options, "gift_images": new_gift_images}
+                        )
+                        st.success("Cambios guardados correctamente.")
+                        st.rerun()
+                st.markdown("</div>", unsafe_allow_html=True)
             st.write("")
             if st.button("🚪 Salir", use_container_width=True, key="logout_btn"):
                 st.session_state.participant_id = None
