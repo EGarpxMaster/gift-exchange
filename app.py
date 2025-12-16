@@ -11,8 +11,8 @@ import pytz
 def auto_run_sorteo():
     try:
         tz = pytz.timezone('America/Bogota')
-        # FECHA SORTEO: 16 de Diciembre a las 10:40
-        sorteo_time = tz.localize(datetime(2025, 12, 16, 15, 5, 0))
+        # FECHA SORTEO: 16 de Diciembre a las 23:59
+        sorteo_time = tz.localize(datetime(2025, 12, 16, 23, 59, 0))
         now_utc = datetime.now(pytz.utc)
         now = now_utc.astimezone(tz)
         
@@ -655,8 +655,8 @@ def show_home():
             <hr style="border: 1px solid #e5e7eb; margin: 1.5rem 0;">
             <h3 style="color: #16a34a; margin-top: 1.5rem; margin-bottom: 1rem;">📋 Cronograma:</h3>
             <ul style="color: #4b5563; line-height: 2; font-size: 0.95rem; margin-left: 1.5rem;">
-                <li>✨ <strong>Registro:</strong> Del 04 de diciembre al 16 de diciembre, 15:00 hrs (GMT-5)</li>
-                <li>🎲 <strong>Sorteo:</strong> Se realizará el 16 de diciembre a las 15:00 hrs (GMT-5)</li>
+                <li>✨ <strong>Registro:</strong> Del 04 de diciembre al 16 de diciembre, 23:59 hrs (GMT-5)</li>
+                <li>🎲 <strong>Sorteo:</strong> Se realizará el 16 de diciembre a las 23:59 hrs (GMT-5)</li>
                 <li>🎁 <strong>Revelación:</strong> 24 de diciembre a medianoche</li>
             </ul>
         </div>
@@ -679,7 +679,7 @@ def show_register():
     import pytz
     tz = pytz.timezone('America/Bogota')  # GMT-5 sin horario de verano
     start_date = tz.localize(datetime(2025, 12, 4, 0, 0, 0))
-    end_date = tz.localize(datetime(2025, 12, 16, 15, 0, 0))  # 16 dic 2025, 15:00 GMT-5
+    end_date = tz.localize(datetime(2025, 12, 16, 23, 59, 59))  # 16 dic 2025, 23:59 GMT-5
     now_utc = datetime.now(pytz.utc)
     current_date = now_utc.astimezone(tz)
     is_open = start_date <= current_date <= end_date
@@ -694,7 +694,7 @@ def show_register():
                 <div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div>
                 <h3 style="color: #dc2626; margin-bottom: 1rem;">Registro Cerrado</h3>
                 <p style="color: #4b5563; font-size: 1.1rem;">
-                    Las inscripciones solo están disponibles del 04 de diciembre al 16 de diciembre, 15:00 hrs (GMT-5).
+                    Las inscripciones solo están disponibles del 04 de diciembre al 16 de diciembre, 23:59 hrs (GMT-5).
                 </p>
                 <p style="color: #6b7280; margin-top: 1rem;">
                     Fecha y hora actual: {current_date.strftime('%d/%m/%Y %H:%M:%S')} (GMT-5)
