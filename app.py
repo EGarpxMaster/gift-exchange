@@ -64,7 +64,7 @@ def show_register():
     start_date = tz.localize(datetime(2025, 12, 4, 0, 0, 0))
     
     # FECHA LÍMITE GLOBAL (Diversión): 16 de Diciembre 15:00
-    end_date_global = tz.localize(datetime(2025, 12, 16, 15, 0, 0))
+    end_date_global = tz.localize(datetime(2025, 12, 16, 23, 59, 59))
     
     # FECHA LÍMITE ÉLITE: 15 de Diciembre 23:59
     limit_elite = tz.localize(datetime(2025, 12, 15, 23, 59, 0))
