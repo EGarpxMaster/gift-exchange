@@ -12,7 +12,7 @@ def auto_run_sorteo():
     try:
         tz = pytz.timezone('America/Bogota')
         # FECHA SORTEO: 16 de Diciembre a las 10:30
-        sorteo_time = tz.localize(datetime(2025, 12, 16, 10, 30, 0))
+        sorteo_time = tz.localize(datetime(2025, 12, 16, 10, 5, 0))
         now_utc = datetime.now(pytz.utc)
         now = now_utc.astimezone(tz)
         
@@ -64,7 +64,7 @@ def show_register():
     start_date = tz.localize(datetime(2025, 12, 4, 0, 0, 0))
     
     # FECHA LÍMITE GLOBAL (Diversión): 16 de Diciembre 10:30
-    end_date_global = tz.localize(datetime(2025, 12, 16, 10, 30, 0))
+    end_date_global = tz.localize(datetime(2025, 12, 16, 10, 4, 99))
     
     # FECHA LÍMITE ÉLITE: 15 de Diciembre 23:59
     limit_elite = tz.localize(datetime(2025, 12, 15, 23, 59, 0))
