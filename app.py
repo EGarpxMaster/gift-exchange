@@ -11,8 +11,8 @@ import pytz
 def auto_run_sorteo():
     try:
         tz = pytz.timezone('America/Bogota')
-        # FECHA SORTEO: 17 de Diciembre a las 00:00 (Inmediatamente al terminar el 16)
-        sorteo_time = tz.localize(datetime(2025, 12, 17, 0, 0, 0))
+        # FECHA SORTEO: 16 de Diciembre a las 10:30
+        sorteo_time = tz.localize(datetime(2025, 12, 16, 10, 30, 0))
         now_utc = datetime.now(pytz.utc)
         now = now_utc.astimezone(tz)
         
@@ -63,8 +63,8 @@ def show_register():
     
     start_date = tz.localize(datetime(2025, 12, 4, 0, 0, 0))
     
-    # FECHA LÍMITE GLOBAL (Diversión): 16 de Diciembre 23:59
-    end_date_global = tz.localize(datetime(2025, 12, 16, 23, 59, 0))
+    # FECHA LÍMITE GLOBAL (Diversión): 16 de Diciembre 10:30
+    end_date_global = tz.localize(datetime(2025, 12, 16, 10, 30, 0))
     
     # FECHA LÍMITE ÉLITE: 15 de Diciembre 23:59
     limit_elite = tz.localize(datetime(2025, 12, 15, 23, 59, 0))
@@ -200,41 +200,7 @@ def show_register():
                                 st.rerun()
                     except Exception as e:
                         st.error(f"Error al registrar: {e}")
-    try:
-        tz = pytz.timezone('America/Bogota')
-        sorteo_time = tz.localize(datetime(2025, 12, 17, 0, 0, 0))
-        now_utc = datetime.now(pytz.utc)
-        now = now_utc.astimezone(tz)
-        
-        # Importación tardía para evitar ciclos si es necesario, 
-        # asumiendo que las funciones están disponibles en el scope o importadas arriba
-        # Para este archivo único, nos basamos en los imports globales definidos más abajo.
-        try:
-            settings = get_settings()
-            if not settings.get('sorteo_completed', False) and now >= sorteo_time:
-                participants = get_participants()
-                elite_parts = [{'id': p['id'], 'category': p['category']} for p in participants if p['category'] == 'elite']
-                div_parts = [{'id': p['id'], 'category': p['category']} for p in participants if p['category'] == 'diversion']
-                if len(elite_parts) >= 2 or len(div_parts) >= 2:
-                    try:
-                        assignments = perform_sorteo(elite_parts, div_parts)
-                        all_parts = [{'id': p['id'], 'category': p['category']} for p in participants]
-                        validation = validate_assignments(all_parts, assignments)
-                        if validation['valid']:
-                            for participant_id, assigned_to_id in assignments.items():
-                                update_participant_assignment(participant_id, assigned_to_id)
-                            update_settings({'sorteo_completed': True})
-                            print('✅ Sorteo realizado automáticamente')
-                        else:
-                            print('❌ Validación falló:', validation['errors'])
-                    except Exception as e:
-                        print('❌ Error en sorteo automático:', str(e))
-                else:
-                    print('No hay suficientes participantes para sorteo automático')
-        except:
-            pass
-    except Exception as e:
-        print(f"Error en auto_run: {e}")
+
 
 # Configurar la página
 st.set_page_config(
@@ -689,8 +655,8 @@ def show_home():
             <hr style="border: 1px solid #e5e7eb; margin: 1.5rem 0;">
             <h3 style="color: #16a34a; margin-top: 1.5rem; margin-bottom: 1rem;">📋 Cronograma:</h3>
             <ul style="color: #4b5563; line-height: 2; font-size: 0.95rem; margin-left: 1.5rem;">
-                <li>✨ <strong>Registro:</strong> Del 04 de diciembre al 16 de diciembre, 23:59 hrs (GMT-5)</li>
-                <li>🎲 <strong>Sorteo:</strong> Se realizará el 17 de diciembre a las 00:00 hrs (GMT-5)</li>
+                <li>✨ <strong>Registro:</strong> Del 04 de diciembre al 16 de diciembre, 10:30 hrs (GMT-5)</li>
+                <li>🎲 <strong>Sorteo:</strong> Se realizará el 16 de diciembre a las 10:30 hrs (GMT-5)</li>
                 <li>🎁 <strong>Revelación:</strong> 24 de diciembre a medianoche</li>
             </ul>
         </div>
@@ -713,7 +679,7 @@ def show_register():
     import pytz
     tz = pytz.timezone('America/Bogota')  # GMT-5 sin horario de verano
     start_date = tz.localize(datetime(2025, 12, 4, 0, 0, 0))
-    end_date = tz.localize(datetime(2025, 12, 16, 23, 59, 0))  # 16 dic 2025, 23:59 GMT-5
+    end_date = tz.localize(datetime(2025, 12, 16, 10, 30, 0))  # 16 dic 2025, 10:30 GMT-5
     now_utc = datetime.now(pytz.utc)
     current_date = now_utc.astimezone(tz)
     is_open = start_date <= current_date <= end_date
@@ -728,7 +694,7 @@ def show_register():
                 <div style="font-size: 4rem; margin-bottom: 1rem;">🔒</div>
                 <h3 style="color: #dc2626; margin-bottom: 1rem;">Registro Cerrado</h3>
                 <p style="color: #4b5563; font-size: 1.1rem;">
-                    Las inscripciones solo están disponibles del 04 de diciembre al 16 de diciembre, 23:59 hrs (GMT-5).
+                    Las inscripciones solo están disponibles del 04 de diciembre al 16 de diciembre, 10:30 hrs (GMT-5).
                 </p>
                 <p style="color: #6b7280; margin-top: 1rem;">
                     Fecha y hora actual: {current_date.strftime('%d/%m/%Y %H:%M:%S')} (GMT-5)
